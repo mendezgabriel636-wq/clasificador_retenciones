@@ -13,14 +13,14 @@
         <mxCell id="Nk_luSFOg4D9ev8fn65W-10" edge="1" parent="1" source="Nk_luSFOg4D9ev8fn65W-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="Nk_luSFOg4D9ev8fn65W-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Nk_luSFOg4D9ev8fn65W-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;&lt;b&gt;consumir las tablas:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;+ data_fact@base_rucs_sri&lt;/div&gt;&lt;div&gt;+ data_fact@base_rucs_catastro&lt;/div&gt;&lt;div&gt;+ innec@ciius_nivel6&lt;/div&gt;" vertex="1">
-          <mxGeometry height="80" width="240" x="280" y="120" as="geometry" />
+        <mxCell id="Nk_luSFOg4D9ev8fn65W-2" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;div&gt;&lt;b&gt;consumir las tablas:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;+ data_fact@base_rucs_sri&lt;/div&gt;&lt;div&gt;+ data_fact@base_rucs_catastro&lt;/div&gt;&lt;div&gt;+ innec@ciius_nivel6&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="280" x="260" y="120" as="geometry" />
         </mxCell>
         <mxCell id="Nk_luSFOg4D9ev8fn65W-11" edge="1" parent="1" source="Nk_luSFOg4D9ev8fn65W-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="Nk_luSFOg4D9ev8fn65W-4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Nk_luSFOg4D9ev8fn65W-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;&lt;b&gt;nuevas columnas para local@base_rucs_sri:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+ codigo_ciiu_corregido&lt;/div&gt;&lt;div&gt;+ descripcion_inec&lt;/div&gt;" vertex="1">
-          <mxGeometry height="80" width="300" x="250" y="240" as="geometry" />
+        <mxCell id="Nk_luSFOg4D9ev8fn65W-3" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;div&gt;&lt;b&gt;nuevas columnas para local@base_rucs_sri:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+ codigo_ciiu_corregido&lt;/div&gt;&lt;div&gt;+ descripcion_inec&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="320" x="240" y="240" as="geometry" />
         </mxCell>
         <mxCell id="Nk_luSFOg4D9ev8fn65W-14" edge="1" parent="1" source="Nk_luSFOg4D9ev8fn65W-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="Nk_luSFOg4D9ev8fn65W-13">
           <mxGeometry relative="1" as="geometry" />
@@ -37,8 +37,8 @@
         <mxCell id="Nk_luSFOg4D9ev8fn65W-21" edge="1" parent="1" source="Nk_luSFOg4D9ev8fn65W-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="Nk_luSFOg4D9ev8fn65W-8">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Nk_luSFOg4D9ev8fn65W-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Publicación tabla data_fact@porcentajes_retencion&lt;/b&gt;" vertex="1">
-          <mxGeometry height="60" width="240" x="280" y="760" as="geometry" />
+        <mxCell id="Nk_luSFOg4D9ev8fn65W-6" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;b&gt;Publicación tabla data_fact@porcentajes_retencion&lt;/b&gt;" vertex="1">
+          <mxGeometry height="60" width="280" x="260" y="760" as="geometry" />
         </mxCell>
         <mxCell id="Nk_luSFOg4D9ev8fn65W-19" edge="1" parent="1" source="Nk_luSFOg4D9ev8fn65W-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="Nk_luSFOg4D9ev8fn65W-17">
           <mxGeometry relative="1" as="geometry" />

@@ -1,0 +1,126 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="Page-1" id="agrupacion-1">
+    <mxGraphModel dx="964" dy="614" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ag-e1" edge="1" parent="1" source="ag-start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-consultar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-start" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="" vertex="1">
+          <mxGeometry height="50" width="50" x="375" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e2" edge="1" parent="1" source="ag-consultar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-extraer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-consultar" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;b&gt;Consultar RUC en catastro SRI&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="240" x="280" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e3" edge="1" parent="1" source="ag-extraer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-valido">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-extraer" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;b&gt;Extraer código CIIU del RUC&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="240" x="280" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e4" edge="1" parent="1" source="ag-valido" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ag-marcar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e4-label" connectable="0" parent="ag-e4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="NO" vertex="1">
+          <mxGeometry relative="1" x="-0.3" y="-3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-e5" edge="1" parent="1" source="ag-valido" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ag-resolver">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e5-label" connectable="0" parent="ag-e5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SI" vertex="1">
+          <mxGeometry relative="1" x="-0.3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-valido" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;b&gt;CIIU válido en catálogo INEC?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="80" width="220" x="290" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e6" edge="1" parent="1" source="ag-marcar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ag-end">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="1005" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-marcar" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Marcar para revisión manual&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="180" x="20" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e7" edge="1" parent="1" source="ag-resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-buscar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-resolver" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Resolver jerarquía CIIU&lt;/b&gt;&lt;div&gt;(Sección &amp;gt; División &amp;gt; Grupo)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="220" x="290" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e8" edge="1" parent="1" source="ag-buscar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-buscar" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;b&gt;Buscar en mapping&lt;/b&gt;&lt;div&gt;CIIU → tipo_operación&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="240" x="280" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-ciiu-db" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;CIIU_MAPPING&lt;/b&gt;&lt;div&gt;(328 reglas)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="580" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-db-edge" edge="1" parent="1" source="ag-ciiu-db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitDy2=0;exitDx2=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ag-buscar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e9" edge="1" parent="1" source="ag-match" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ag-padre">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e9-label" connectable="0" parent="ag-e9" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="NO" vertex="1">
+          <mxGeometry relative="1" x="-0.3" y="-3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-e10" edge="1" parent="1" source="ag-match" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ag-asignar-ops">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e10-label" connectable="0" parent="ag-e10" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SI" vertex="1">
+          <mxGeometry relative="1" x="-0.3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-match" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;b&gt;Match encontrado?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="80" width="180" x="310" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e11" edge="1" parent="1" source="ag-padre" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ag-buscar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="815" />
+              <mxPoint x="170" y="545" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag-padre" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Usar sección padre más cercana&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="180" x="195" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e12" edge="1" parent="1" source="ag-asignar-ops" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-filtrar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-asignar-ops" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Asignar operaciones probables&lt;/b&gt;&lt;div&gt;(ALTA / MEDIA / BAJA)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="220" x="490" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e13" edge="1" parent="1" source="ag-filtrar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-max">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-filtrar" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Filtrar reglas solo para operaciones relevantes&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="220" x="490" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-e14" edge="1" parent="1" source="ag-max" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ag-end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-max" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Tomar max(reglas relevantes)&lt;/b&gt;&lt;div&gt;como retención conservadora&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="220" x="490" y="930" as="geometry" />
+        </mxCell>
+        <mxCell id="ag-end" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
+          <mxGeometry height="50" width="50" x="375" y="1020" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
