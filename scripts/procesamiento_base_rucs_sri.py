@@ -42,7 +42,7 @@ def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
     query_correccion = """
     SELECT actividad_economica,
             codigo_ciiu,
-            UPPER(descripcion_ciiu)
+            UPPER(descripcion_ciiu) as descripcion_ciiu
     FROM correccion_final
         """
     return pl.read_database(query_correccion, connection=engine_data_fact)
