@@ -53,14 +53,22 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
 
 
 def consulta_excel() -> pl.DataFrame:
-    return pl.read_excel(r"..\bases_datos\ciiu_nivel6.xlsx")
+    query_ciiu = """
+    SELECT *
+    FROM ciiu_nivel6;
+    """
+    return pl.read_database(query_ciiu, connection=engine_data_fact)
 
 
 def consulta_excel_correcciones() -> pl.DataFrame:
+    query_correccion = """
+    SELECT actividad_economica,
+            codigo_ciiu,
+            UPPER(descripcion_ciiu)
+    FROM correccion_final
+        """ 
     return (
-        pl.read_excel(r"..\bases_datos\correccion_final.xlsx")
-        .select(["actividad_economica", "codigo_ciiu", "descripcion_ciiu"])
-        .with_columns(pl.col("descripcion_ciiu").str.to_uppercase())
+        pl.read_database(query_correccion, connection = engine_data_fact)
     )
 
 
@@ -247,7 +255,13 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
 
     rucs_sri_corregida = base_rucs_sri_corregido_catastro.unique("numero_ruc")
 
-    ciiu_clasificado = pl.read_excel(r"..\bases_datos\ciiu_clasificado_retencion_iva_bien_servicio_v6.xlsx")
+
+    query_clasificado = """
+    SELECT *
+    FROM ciiu_clasificado_retencion_iva_bien_servicio_v6;
+    """
+
+    ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact)
 
     ciiu_clasificado = ciiu_clasificado.with_columns(pl.col("codigo_ciiu").str.replace_all(".", "", literal=True).alias("codigo_ciiu_sin_punto"))
 

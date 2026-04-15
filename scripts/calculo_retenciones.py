@@ -1,6 +1,6 @@
 from retencion_iva import aplicar_retencion_iva
-from reglas_retencion_renta import aplicar_retencion_renta
-from correcciones_generales_produccion import procesamiento
+from retencion_renta import aplicar_retencion_renta
+from procesamiento_base_rucs_sri import procesamiento
 import polars as pl
 import time  # CAMBIO: Agregado para fecha_carga
 from sqlalchemy.engine import Engine
@@ -67,7 +67,7 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         'transacciones_inexistente',
         'nombre_representante_legal',
         'identificacion_representante_legal',
-        'representantes_legales',
+        'representantes_legales'
     ])
 
     # =====================
@@ -84,8 +84,12 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     # 5. Cruce con tabla de retenciones → campo formulario 103 IR
     # =====================
+    query_tabla_retenciones = """
+    SELECT *
+    FROM tabla_retenciones
+    """
     tabla_retenciones = (
-        pl.read_excel(r"..\bases_datos\tabla_retenciones.xlsx")
+        pl.read_database(query_tabla_retenciones, connection=engine_data_fact)
         .select([
             pl.col(r'casillero Formulario 103  base imponible ').alias('campo_formulario_103_ir'),
             pl.col(r'Código del Anexo .1').cast(pl.Utf8).alias('codigo_anexo_ir'),
