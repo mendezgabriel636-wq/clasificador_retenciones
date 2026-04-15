@@ -104,10 +104,10 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         query_tabla_retenciones, connection=engine_data_fact
     ).select(
         [
-            pl.col(r"casillero Formulario 103  base imponible ").alias(
+            pl.col(r"casillero Formulario 103  base imponible").alias(
                 "campo_formulario_103_ir"
             ),
-            pl.col(r"Código del Anexo .1").cast(pl.Utf8).alias("codigo_anexo_ir"),
+            pl.col("CÃ³digo del Anexo .1").cast(pl.Utf8).alias("codigo_anexo_ir"),
         ]
     )
 
