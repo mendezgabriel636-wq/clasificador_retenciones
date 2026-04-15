@@ -1,4 +1,5 @@
 import polars as pl
+
 from sqlalchemy.engine import Engine
 
 
@@ -9,33 +10,8 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     # =========================================================================
     query_sri = """
     SELECT
-        numero_ruc,
-        razon_social,
-        estado_contribuyente,
-        estado_establecimiento,
-        actividad_economica,
-        tipo_contribuyente,
-        clase_contribuyente,
-        categoria,
-        obligado_llevar_contabilidad,
-        agente_retencion,
-        contribuyente_especial,
-        fecha_actualizacion,
-        nombre_fantasia_comercial,
-        numero_establecimiento,
-        id_establecimiento,
-        fecha_inicio_actividades_comercio,
-        fecha_actualizacion_comercio,
-        fecha_cese_comercio,
-        fecha_reinicio_actividades_comercio,
-        direccion_completa,
-        motivo_cancelacion_suspension,
-        contribuyente_fantasma,
-        transacciones_inexistente,
-        nombre_representante_legal,
-        identificacion_representante_legal,
-        representantes_legales
-    FROM base_rucs_sri;
+        numero_ruc, razon_social, estado_contribuyente, estado_establecimiento, actividad_economica, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, agente_retencion, contribuyente_especial, fecha_actualizacion, nombre_fantasia_comercial, numero_establecimiento, id_establecimiento, fecha_inicio_actividades_comercio, fecha_actualizacion_comercio, fecha_cese_comercio, fecha_reinicio_actividades_comercio, direccion_completa, motivo_cancelacion_suspension, contribuyente_fantasma, transacciones_inexistente, nombre_representante_legal, identificacion_representante_legal, representantes_legales 
+        FROM base_rucs_sri;
     """
 
     query_catastro = """
@@ -47,29 +23,29 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     """
 
     df_base_rucs_sri = pl.read_database(query_sri, connection=engine_data_fact)
-    df_base_rucs_catastro = pl.read_database(query_catastro, connection=engine_data_fact)
+    df_base_rucs_catastro = pl.read_database(
+        query_catastro, connection=engine_data_fact
+    )
 
     return df_base_rucs_sri, df_base_rucs_catastro
 
 
-def consulta_excel() -> pl.DataFrame:
+def consulta_excel(engine_data_fact: Engine) -> pl.DataFrame:
     query_ciiu = """
-    SELECT *
+    SELECT CODIGO, DESCRIPCION
     FROM ciiu_nivel6;
     """
     return pl.read_database(query_ciiu, connection=engine_data_fact)
 
 
-def consulta_excel_correcciones() -> pl.DataFrame:
+def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
     query_correccion = """
     SELECT actividad_economica,
             codigo_ciiu,
             UPPER(descripcion_ciiu)
     FROM correccion_final
-        """ 
-    return (
-        pl.read_database(query_correccion, connection = engine_data_fact)
-    )
+        """
+    return pl.read_database(query_correccion, connection=engine_data_fact)
 
 
 # =========================================================================
@@ -96,28 +72,24 @@ _COLS_EXTRA_SRI = [
 
 
 def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
-    df_base_rucs_sri, df_base_rucs_catastro = consulta_sql(engine_data_fact)
-    df_inec = consulta_excel()
+    df_base_rucs_sri, df_base_rucs_catastro = consulta_sql(
+        engine_data_fact=engine_data_fact
+    )
+    df_inec = consulta_excel(engine_data_fact=engine_data_fact)
 
     # =====================
     # Procesamiento Catastro
     # =====================
-    df_base_rucs_catastro = (
-        df_base_rucs_catastro
-        .rename({"actividad_economica": "actividad_economica_catastro"})
-        .unique(subset=["numero_ruc"])
-    )
+    df_base_rucs_catastro = df_base_rucs_catastro.rename(
+        {"actividad_economica": "actividad_economica_catastro"}
+    ).unique(subset=["numero_ruc"])
 
     # =====================
     # Procesamiento INEC
     # =====================
-    df_inec = df_inec.drop(["NIVEL", "__UNNAMED__0"])
-
-    df_inec = (
-        df_inec
-        .with_columns(pl.col("CODIGO").str.replace(r"\.", ""))
-        .with_columns(pl.col("DESCRIPCION").str.strip_chars().str.to_uppercase())
-    )
+    df_inec = df_inec.with_columns(
+        pl.col("CODIGO").str.replace(r"\.", "")
+    ).with_columns(pl.col("DESCRIPCION").str.strip_chars().str.to_uppercase())
 
     df_inec = df_inec.rename({"DESCRIPCION": "DESCRIPCION_INEC"})
 
@@ -126,7 +98,9 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     longitud_ciiu_catastros_no_inec = len(ciiu_catastro - ciiu_inec)
 
     if longitud_ciiu_catastros_no_inec > 0:
-        print(f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec")
+        print(
+            f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec"
+        )
     else:
         print("Hay igual o más en Inec que en catastro")
 
@@ -137,29 +111,30 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         pl.col("numero_ruc").cast(pl.Utf8).str.len_chars() >= 9
     )
 
-    df_base_rucs_sri = (
-        df_base_rucs_sri
-        .sort("fecha_actualizacion", descending=True)
-        .unique(subset=["numero_ruc"])
-    )
+    df_base_rucs_sri = df_base_rucs_sri.sort(
+        "fecha_actualizacion", descending=True
+    ).unique(subset=["numero_ruc"])
 
     # =========================================================================
     # CAMBIO: tipo_contribuyente incluido explícitamente (lo necesitan
     #         retencion_iva y retencion_renta)
     # =========================================================================
-    df_base_rucs_sri = df_base_rucs_sri.select([
-        "numero_ruc",
-        "actividad_economica",
-        "razon_social",
-        "estado_contribuyente",
-        "estado_establecimiento",
-        "tipo_contribuyente",
-        "clase_contribuyente",
-        "categoria",
-        "obligado_llevar_contabilidad",
-        "agente_retencion",
-        "contribuyente_especial",
-    ] + _COLS_EXTRA_SRI)
+    df_base_rucs_sri = df_base_rucs_sri.select(
+        [
+            "numero_ruc",
+            "actividad_economica",
+            "razon_social",
+            "estado_contribuyente",
+            "estado_establecimiento",
+            "tipo_contribuyente",
+            "clase_contribuyente",
+            "categoria",
+            "obligado_llevar_contabilidad",
+            "agente_retencion",
+            "contribuyente_especial",
+        ]
+        + _COLS_EXTRA_SRI
+    )
 
     # =====================
     # Joins: sri <--- catastro <--- inec
@@ -172,24 +147,36 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     )
 
     catastro_sri_no_inec = sri_catastro_inec.filter(
-        pl.col("DESCRIPCION_INEC").is_null() & pl.col("actividad_economica").is_not_null()
+        pl.col("DESCRIPCION_INEC").is_null()
+        & pl.col("actividad_economica").is_not_null()
     )
 
     longitud_catastro_sri_no_inec = len(
         catastro_sri_no_inec.unique(subset=["actividad_economica"])
     )
-    print(f"Hay {longitud_catastro_sri_no_inec} actividades económicas que tienen catastro y sri pero no inec")
+    print(
+        f"Hay {longitud_catastro_sri_no_inec} actividades económicas que tienen catastro y sri pero no inec"
+    )
 
     # =========================================================================
     # CAMBIO: tipo_contribuyente incluido explícitamente
     # =========================================================================
-    catastro_sri_no_inec = catastro_sri_no_inec.select([
-        "numero_ruc", "actividad_economica", "razon_social",
-        "estado_contribuyente", "estado_establecimiento",
-        "tipo_contribuyente",
-        "clase_contribuyente", "categoria",
-        "obligado_llevar_contabilidad", "agente_retencion", "contribuyente_especial",
-    ] + _COLS_EXTRA_SRI)
+    catastro_sri_no_inec = catastro_sri_no_inec.select(
+        [
+            "numero_ruc",
+            "actividad_economica",
+            "razon_social",
+            "estado_contribuyente",
+            "estado_establecimiento",
+            "tipo_contribuyente",
+            "clase_contribuyente",
+            "categoria",
+            "obligado_llevar_contabilidad",
+            "agente_retencion",
+            "contribuyente_especial",
+        ]
+        + _COLS_EXTRA_SRI
+    )
 
     catastro_sri_no_inec_aumentado_inec = catastro_sri_no_inec.join(
         df_inec, left_on="actividad_economica", right_on="DESCRIPCION_INEC", how="left"
@@ -198,17 +185,16 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     # Corrección semántica desde Excel
     # =====================
-    faltantes_correccion_semantica = (
-        catastro_sri_no_inec_aumentado_inec
-        .filter(pl.col("actividad_economica").is_not_null() & pl.col("CODIGO").is_null())
-        .with_columns(pl.col("actividad_economica").str.strip_chars())
-    )
+    faltantes_correccion_semantica = catastro_sri_no_inec_aumentado_inec.filter(
+        pl.col("actividad_economica").is_not_null() & pl.col("CODIGO").is_null()
+    ).with_columns(pl.col("actividad_economica").str.strip_chars())
 
-    correcciones = consulta_excel_correcciones()
+    correcciones = consulta_excel_correcciones(engine_data_fact=engine_data_fact)
 
     corregido_semanticamente = (
-        faltantes_correccion_semantica
-        .join(correcciones, on="actividad_economica", how="left")
+        faltantes_correccion_semantica.join(
+            correcciones, on="actividad_economica", how="left"
+        )
         .drop("CODIGO")
         .rename({"codigo_ciiu": "CODIGO", "descripcion_ciiu": "DESCRIPCION_INEC"})
     )
@@ -225,23 +211,20 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     )
 
     corregidos_catastro_inec = (
-        corregidos_catastro_inec
-        .drop("actividad_economica_catastro")
+        corregidos_catastro_inec.drop("actividad_economica_catastro")
         .rename({"codigo_ciiu": "CODIGO"})
         .with_columns(pl.lit(1).alias("correcion_catastro_inec_ciiu"))
     )
 
-    corregidos_sri_no_inec = (
-        corregidos_sri_no_inec
-        .with_columns([
+    corregidos_sri_no_inec = corregidos_sri_no_inec.with_columns(
+        [
             pl.col("razon_social").alias("DESCRIPCION_INEC"),
             pl.lit(1).alias("correcion_sri_inec_desc"),
-        ])
+        ]
     )
 
-    corregido_semanticamente = (
-        corregido_semanticamente
-        .with_columns(pl.lit(1).alias("correcion_semantica"))
+    corregido_semanticamente = corregido_semanticamente.with_columns(
+        pl.lit(1).alias("correcion_semantica")
     )
 
     base_rucs_sri_corregido_catastro = pl.concat(
@@ -249,12 +232,19 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         how="diagonal",
     )
 
-    print(len(base_rucs_sri_corregido_catastro.filter(pl.col("CODIGO").is_null()).unique("actividad_economica")['actividad_economica']))
+    print(
+        len(
+            base_rucs_sri_corregido_catastro.filter(pl.col("CODIGO").is_null()).unique(
+                "actividad_economica"
+            )["actividad_economica"]
+        )
+    )
 
-    print(f"Archivo guardado con {len(base_rucs_sri_corregido_catastro.unique('numero_ruc'))} registros únicos")
+    print(
+        f"Archivo guardado con {len(base_rucs_sri_corregido_catastro.unique('numero_ruc'))} registros únicos"
+    )
 
     rucs_sri_corregida = base_rucs_sri_corregido_catastro.unique("numero_ruc")
-
 
     query_clasificado = """
     SELECT *
@@ -263,13 +253,24 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
 
     ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact)
 
-    ciiu_clasificado = ciiu_clasificado.with_columns(pl.col("codigo_ciiu").str.replace_all(".", "", literal=True).alias("codigo_ciiu_sin_punto"))
+    ciiu_clasificado = ciiu_clasificado.with_columns(
+        pl.col("codigo_ciiu")
+        .str.replace_all(".", "", literal=True)
+        .alias("codigo_ciiu_sin_punto")
+    )
 
-    ciiu_clasificado = ciiu_clasificado.drop(["codigo_ciiu", "descripcion", "nivel", "confianza", "Claude_clasificacion_probabilidad"])
+    ciiu_clasificado = ciiu_clasificado.drop(
+        [
+            "codigo_ciiu",
+            "descripcion",
+            "nivel",
+            "confianza",
+            "Claude_clasificacion_probabilidad",
+        ]
+    )
 
-    merge_sri_clasificacion_ciiu = rucs_sri_corregida.join(ciiu_clasificado,
-                    right_on = "codigo_ciiu_sin_punto",
-                    left_on ='CODIGO',
-                    how = "left")
+    merge_sri_clasificacion_ciiu = rucs_sri_corregida.join(
+        ciiu_clasificado, right_on="codigo_ciiu_sin_punto", left_on="CODIGO", how="left"
+    )
 
     return merge_sri_clasificacion_ciiu
