@@ -23,7 +23,7 @@ def automatizar_impositivas(engine_data_fact: Engine, engine_data_fact_escritura
     # 2. Cargar base_retenciones al RDS
     ##################################################
     logger.info('Cargando...')
-    rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones',schema = 'data_fact',tipo=1)
-    rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones',schema = 'data_qph',tipo=0)
+    rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones_pruebas',schema = 'data_fact',tipo=1)
+    #rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones',schema = 'data_qph',tipo=0)
 
     logger.info('Proceso terminado')

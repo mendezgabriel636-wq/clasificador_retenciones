@@ -303,7 +303,7 @@ def obtener_codigo_sri(tipo_concepto_ir: str, tipo_contribuyente: str) -> str:
 # FUNCIÓN PRINCIPAL: calcular_retencion_renta
 # =============================================================================
 
-def calcular_retencion_renta(row: Dict) -> Tuple[str, float, str, str]:
+def calcular_retencion_renta(row: Dict) -> Tuple[str, str, str, str]:
     """
     Calcula la retención de renta para una fila de la tabla de proveedores.
 
@@ -311,7 +311,8 @@ def calcular_retencion_renta(row: Dict) -> Tuple[str, float, str, str]:
     - row: dict con las columnas del proveedor (compatible con pl.struct map_elements)
 
     Retorna:
-    - Tupla: (codigo_sri, porcentaje, descripcion, base_calculo)
+    - Tupla: (codigo_sri, porcentaje_str, descripcion, base_calculo)
+    # CAMBIO: porcentaje se retorna como str() para compatibilidad con pl.List(pl.String)
     """
     
     # Extraer valores de la fila (normalizar)
@@ -324,17 +325,18 @@ def calcular_retencion_renta(row: Dict) -> Tuple[str, float, str, str]:
     # =========================================================================
     # REGLA 1: ¿Es Contribuyente Especial?
     # =========================================================================
-    # Columnas binarias: 1 = SI, 0 = NO
     es_contribuyente_especial = (
         contribuyente_especial in ['1', '1.0', 'SI', 'SÍ', 'S', 'TRUE', 'VERDADERO'] or
         (isinstance(row.get('contribuyente_especial'), (int, float)) and row.get('contribuyente_especial') == 1)
     )
     
+    # CAMBIO: str(0.0) en vez de 0.0
     if es_contribuyente_especial:
-        return ('N/A', 0.0, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI')
+        return ('N/A', str(0.0), 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI')
     
+    # CAMBIO: str(0.0) en vez de 0.0
     if clase_contribuyente == 'ESPECIAL':
-        return ('N/A', 0.0, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI')
+        return ('N/A', str(0.0), 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI')
     
     # =========================================================================
     # REGLA 2: ¿Es RIMPE Negocio Popular?
@@ -344,7 +346,8 @@ def calcular_retencion_renta(row: Dict) -> Tuple[str, float, str, str]:
     
     if es_rimpe and es_negocio_popular:
         concepto = CONCEPTOS_SRI['332']
-        return ('332', concepto['porcentaje'], concepto['descripcion'], 'RIMPE Negocio Popular')
+        # CAMBIO: str(concepto['porcentaje'])
+        return ('332', str(concepto['porcentaje']), concepto['descripcion'], 'RIMPE Negocio Popular')
     
     # =========================================================================
     # REGLA 3: ¿Es RIMPE Emprendedor?
@@ -353,28 +356,28 @@ def calcular_retencion_renta(row: Dict) -> Tuple[str, float, str, str]:
     
     if es_rimpe and es_emprendedor:
         concepto = CONCEPTOS_SRI['343']
-        return ('343', concepto['porcentaje'], concepto['descripcion'], 'RIMPE Emprendedor')
+        # CAMBIO: str(concepto['porcentaje'])
+        return ('343', str(concepto['porcentaje']), concepto['descripcion'], 'RIMPE Emprendedor')
     
     # =========================================================================
     # REGLA 4: Clasificar por tipo_concepto_ir
     # =========================================================================
-    
-    # Obtener codigo_sri según tipo_concepto_ir y tipo_contribuyente
     codigo_sri = obtener_codigo_sri(tipo_concepto_ir, tipo_contribuyente)
     
-    # Obtener porcentaje y descripción del catálogo
     if codigo_sri in CONCEPTOS_SRI:
         concepto = CONCEPTOS_SRI[codigo_sri]
+        # CAMBIO: str(concepto['porcentaje'])
         return (
             codigo_sri, 
-            concepto['porcentaje'], 
+            str(concepto['porcentaje']), 
             concepto['descripcion'],
             f"{tipo_concepto_ir} → {codigo_sri}"
         )
     
     # Fallback: residual 3%
     concepto = CONCEPTOS_SRI['3440']
-    return ('3440', concepto['porcentaje'], concepto['descripcion'], 'Residual')
+    # CAMBIO: str(concepto['porcentaje'])
+    return ('3440', str(concepto['porcentaje']), concepto['descripcion'], 'Residual')
 
 
 # =============================================================================

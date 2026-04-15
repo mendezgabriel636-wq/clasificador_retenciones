@@ -25,7 +25,8 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
 
     # =========================================================================
     # CAMBIO: Se ampliaron las columnas en el select para incluir las columnas
-    #         extra de catastro necesarias para el formato RDS
+    #         extra de SRI necesarias para el formato RDS
+    #         NOTA: estado_establecimiento ya viene del select base
     # =========================================================================
     iva_renta = aplicado_iva.join(
         aplicado_renta.select(columnas_renta),
@@ -43,6 +44,7 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         'contribuyente_especial',
         'CODIGO',
         'actividad_economica',
+        'estado_establecimiento',
         # IVA
         'porcentaje_retencion_iva',
         'motivo_iva',
@@ -50,9 +52,9 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         'codigo_sri_renta',
         'porcentaje_renta',
         'base_calculo_renta',
-        # CAMBIO: Columnas extra de catastro para formato RDS
+        # CAMBIO: Columnas extra de SRI para formato RDS
         'nombre_fantasia_comercial',
-        'estado_establecimiento',
+        # estado_establecimiento ya incluido arriba
         'numero_establecimiento',
         'id_establecimiento',
         'fecha_inicio_actividades_comercio',

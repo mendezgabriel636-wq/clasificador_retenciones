@@ -10,7 +10,7 @@ from sqlalchemy import inspect,text
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 from sqlalchemy.engine import Engine
-from app.Utils.logger_config import LoggerManager
+#from app.Utils.#logger_config import #loggerManager
 
 from sqlalchemy import (
     Table, Column, MetaData, String, BigInteger, SmallInteger,
@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.mysql import BIGINT, SMALLINT,TINYINT,DECIMAL
 
-logger = LoggerManager(__name__)
+# #logger = #loggerManager(__name__)
 
 
 def tipos(df):
@@ -74,15 +74,15 @@ class RDS:
             """
         try:
             df = pd.read_sql(consulta, engine_data_fact)
-            logger.info(f"Consulta exitosa. Total registros: {len(df)}")
+            ##logger.info(f"Consulta exitosa. Total registros: {len(df)}")
             return df
 
         except SQLAlchemyError as e:
-            logger.info(f"Error de SQLAlchemy al leer base_precalificados_onboarding: {e}")
+            ##logger.info(f"Error de SQLAlchemy al leer base_precalificados_onboarding: {e}")
             return None
 
         except Exception as e:
-            logger.info(f"Error inesperado: {e}")
+            ##logger.info(f"Error inesperado: {e}")
             return None
 
     def carga_base_retenciones(self, df: pd.DataFrame, engine_data_fact: Engine, engine_data_fact_escritura: Engine, table_name: str = 'base_rucs_retenciones_pruebas', schema: str = 'data_fact', tipo: int = 0) -> None:
@@ -90,13 +90,13 @@ class RDS:
         intentos_max = 3
         full_table_name = f"{schema}.{table_name}"
         
-        logger.info(f"Se van a colocar los datos en la tabla: {full_table_name}")
+        ##logger.info(f"Se van a colocar los datos en la tabla: {full_table_name}")
         
         if df is None or df.empty:
             raise ValueError("El DataFrame está vacío o no es válido")
         
         if tipo == 1:
-            logger.info("Se usarán todas las columnas AVATI")
+            ##logger.info("Se usarán todas las columnas AVATI")
             columnas_requeridas = [
                             'numero_ruc_str', 'razon_social', 'provincia_jurisdiccion',
                              'nombre_comercial', 'estado_contribuyente', 'clase_contribuyente',
@@ -125,7 +125,7 @@ class RDS:
             df = df[columnas_requeridas]
     
         if tipo == 0:
-            logger.info("Se usarán todas las columnas QPH")
+            ##logger.info("Se usarán todas las columnas QPH")
     
         # ============================
         # CAMBIO
@@ -134,10 +134,10 @@ class RDS:
             import pandas as pd
 
             # if 'identificacion_representante_legal' not in df.columns:
-            #     logger.warning('Advertencia: no existe columna identificacion_representante_legal; se usará vacío')
+            #     #logger.warning('Advertencia: no existe columna identificacion_representante_legal; se usará vacío')
             #     df['identificacion_representante_legal'] = pd.NA
             # if 'nombre_representante_legal' not in df.columns:
-            #     logger.warning('Advertencia: no existe columna nombre_representante_legal; se usará vacío')
+            #     #logger.warning('Advertencia: no existe columna nombre_representante_legal; se usará vacío')
             #     df['nombre_representante_legal'] = pd.NA
     
             # def _norm(x):
@@ -160,7 +160,7 @@ class RDS:
     
             # df['representante_legal'] = df.apply(_build_rep, axis=1)  # [NUEVO]
             if 'representantes_legales' not in df.columns:
-                logger.warning('Advertencia: no existe columna representantes_legales; se usará vacío')
+                ##logger.warning('Advertencia: no existe columna representantes_legales; se usará vacío')
                 df['representantes_legales'] = pd.NA
             
             df["representantes_legales"] = (
@@ -284,7 +284,7 @@ class RDS:
         tabla_existe = inspector.has_table(table_name, schema=schema)
         
         if tabla_existe:
-            logger.info("La tabla existe. Verificando compatibilidad de columnas...")
+            #logger.info("La tabla existe. Verificando compatibilidad de columnas...")
             columnas_sql = [col['name'].lower() for col in inspector.get_columns(table_name, schema=schema)]
             columnas_df = [col.lower() for col in df.columns]
         
@@ -292,26 +292,26 @@ class RDS:
                 try:
                     with engine_data_fact_escritura.begin() as connection:
                         connection.execute(text(f'TRUNCATE TABLE {full_table_name}'))
-                    logger.info('truncate ok')
+                    #logger.info('truncate ok')
                 except SQLAlchemyError as e:
                     logging.error("Error al truncar la tabla '%s': %s", full_table_name, e)
                     raise
             else:
-                logger.info("La estructura no coincide. Se eliminará y recreará la tabla...")
+                #logger.info("La estructura no coincide. Se eliminará y recreará la tabla...")
                 try:
                     with engine_data_fact_escritura.begin() as connection:
                         connection.execute(text(f'DROP TABLE {full_table_name}'))
-                    logger.info("Tabla eliminada correctamente.")
+                    #logger.info("Tabla eliminada correctamente.")
                     tabla_retenciones.create(bind=engine_data_fact_escritura)
-                    logger.info("Tabla recreada con estructura definida.")
+                    #logger.info("Tabla recreada con estructura definida.")
                 except SQLAlchemyError as e:
                     logging.error("Error al recrear la tabla '%s': %s", full_table_name, e)
                     raise
         else:
-            logger.info(f"La tabla {full_table_name} no existe. Se va a crear con la estructura definida...")
+            #logger.info(f"La tabla {full_table_name} no existe. Se va a crear con la estructura definida...")
             try:
                 tabla_retenciones.create(bind=engine_data_fact_escritura)
-                logger.info("Tabla creada correctamente.")
+                #logger.info("Tabla creada correctamente.")
             except SQLAlchemyError as e:
                 logging.error("Error al crear la tabla '%s': %s", full_table_name, e)
                 raise
@@ -323,7 +323,7 @@ class RDS:
         
             while intento <= intentos_max:
                 try:
-                    logger.info(f'Insertando desde {i} hasta {i + len(bloque)} (Intento {intento})')
+                    #logger.info(f'Insertando desde {i} hasta {i + len(bloque)} (Intento {intento})')
                     bloque.to_sql(
                         name=table_name,
                         con=engine_data_fact_escritura,
@@ -334,11 +334,11 @@ class RDS:
                     break
                 except SQLAlchemyError as e:
                     logging.warning("Error al insertar bloque %d-%d: %s", i, i + len(bloque), e)
-                    logger.info("[to_sql ERROR]", str(e)[:500])
+                    #logger.info("[to_sql ERROR]", str(e)[:500])
                     time.sleep(5 * intento)
                     intento += 1
             else:
                 logging.error("Fallo persistente al insertar bloque %d-%d. El bloque va a omitirse", i, i + len(bloque))
                 continue
     
-        logger.info('Carga al RDS terminada correctamente')
+        #logger.info('Carga al RDS terminada correctamente')

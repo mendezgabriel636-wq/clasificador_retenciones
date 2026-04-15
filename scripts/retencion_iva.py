@@ -149,7 +149,7 @@ def aplicar_retencion_iva(df: pl.DataFrame) -> pl.DataFrame:
     columnas = [
         'tipo_contribuyente', 'clase_contribuyente', 'categoria',
         'obligado_llevar_contabilidad', 'contribuyente_especial',
-        'tipo_bien_servicio_iva', 'excepcion_art3'
+        'tipo_concepto_iva', 'excepcion_art3'
     ]
 
     resultados = (
@@ -161,9 +161,9 @@ def aplicar_retencion_iva(df: pl.DataFrame) -> pl.DataFrame:
                 categoria=row['categoria'],
                 obligado_contabilidad=row['obligado_llevar_contabilidad'],
                 contribuyente_especial=row['contribuyente_especial'],
-                tipo=row['tipo_bien_servicio_iva'],
+                tipo=row['tipo_concepto_iva'],
                 excepcion_art3=row['excepcion_art3']
-            ), return_dtype=pl.Struct)
+            ), return_dtype=pl.Struct({"porcentaje": pl.Int64, "articulo": pl.Utf8, "motivo": pl.Utf8}))
             .alias('resultado_iva')
         )
         .with_columns([
