@@ -100,16 +100,25 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
     SELECT *
     FROM tabla_retenciones
     """
-    tabla_retenciones = pl.read_database(
-        query_tabla_retenciones, connection=engine_data_fact
-    ).select(
-        [
-            pl.col(r"casillero Formulario 103  base imponible").alias(
-                "campo_formulario_103_ir"
-            ),
-            pl.col("CÃ³digo del Anexo .1").cast(pl.Utf8).alias("codigo_anexo_ir"),
-        ]
-    )
+    try:
+        _raw_tabla = pl.read_database(query_tabla_retenciones, connection=engine_data_fact)
+    except Exception as e:
+        raise RuntimeError(f"[calcular_retenciones] Fallo al leer 'tabla_retenciones': {e}") from e
+
+    try:
+        tabla_retenciones = _raw_tabla.select(
+            [
+                pl.col(r"casillero Formulario 103  base imponible").alias(
+                    "campo_formulario_103_ir"
+                ),
+                pl.col("CÃ³digo del Anexo .1").cast(pl.Utf8).alias("codigo_anexo_ir"),
+            ]
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"[calcular_retenciones] Fallo al seleccionar columnas de 'tabla_retenciones' — "
+            f"verifique nombres y encoding. Columnas disponibles: {_raw_tabla.columns}. Error: {e}"
+        ) from e
 
     iva_renta_final = iva_renta.join(
         tabla_retenciones,

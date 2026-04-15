@@ -22,10 +22,15 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     FROM base_rucs_catastro;
     """
 
-    df_base_rucs_sri = pl.read_database(query_sri, connection=engine_data_fact)
-    df_base_rucs_catastro = pl.read_database(
-        query_catastro, connection=engine_data_fact
-    )
+    try:
+        df_base_rucs_sri = pl.read_database(query_sri, connection=engine_data_fact)
+    except Exception as e:
+        raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}") from e
+
+    try:
+        df_base_rucs_catastro = pl.read_database(query_catastro, connection=engine_data_fact)
+    except Exception as e:
+        raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}") from e
 
     return df_base_rucs_sri, df_base_rucs_catastro
 
@@ -35,7 +40,10 @@ def consulta_excel(engine_data_fact: Engine) -> pl.DataFrame:
     SELECT CODIGO, DESCRIPCION
     FROM ciiu_nivel6;
     """
-    return pl.read_database(query_ciiu, connection=engine_data_fact)
+    try:
+        return pl.read_database(query_ciiu, connection=engine_data_fact)
+    except Exception as e:
+        raise RuntimeError(f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}") from e
 
 
 def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
@@ -45,7 +53,10 @@ def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
             UPPER(descripcion_ciiu) as descripcion_ciiu
     FROM correccion_final
         """
-    return pl.read_database(query_correccion, connection=engine_data_fact)
+    try:
+        return pl.read_database(query_correccion, connection=engine_data_fact)
+    except Exception as e:
+        raise RuntimeError(f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}") from e
 
 
 # =========================================================================
@@ -251,23 +262,34 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     FROM ciiu_clasificado_retencion_iva_bien_servicio_v6;
     """
 
-    ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact, infer_schema_length=None)
+    try:
+        ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact, infer_schema_length=None)
+    except Exception as e:
+        raise RuntimeError(
+            f"[procesamiento] Fallo al leer 'ciiu_clasificado_retencion_iva_bien_servicio_v6': {e}"
+        ) from e
 
-    ciiu_clasificado = ciiu_clasificado.with_columns(
-        pl.col("codigo_ciiu")
-        .str.replace_all(".", "", literal=True)
-        .alias("codigo_ciiu_sin_punto")
-    )
-
-    ciiu_clasificado = ciiu_clasificado.drop(
-        [
-            "codigo_ciiu",
-            "descripcion",
-            "nivel",
-            "confianza",
-            "Claude_clasificacion_probabilidad",
-        ]
-    )
+    try:
+        ciiu_clasificado = ciiu_clasificado.with_columns(
+            pl.col("codigo_ciiu")
+            .str.replace_all(".", "", literal=True)
+            .alias("codigo_ciiu_sin_punto")
+        )
+        ciiu_clasificado = ciiu_clasificado.drop(
+            [
+                "codigo_ciiu",
+                "descripcion",
+                "nivel",
+                "confianza",
+                "Claude_clasificacion_probabilidad",
+            ]
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"[procesamiento] Fallo al procesar columnas de 'ciiu_clasificado' — "
+            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, Claude_clasificacion_probabilidad. "
+            f"Columnas disponibles: {ciiu_clasificado.columns}. Error: {e}"
+        ) from e
 
     merge_sri_clasificacion_ciiu = rucs_sri_corregida.join(
         ciiu_clasificado, right_on="codigo_ciiu_sin_punto", left_on="CODIGO", how="left"

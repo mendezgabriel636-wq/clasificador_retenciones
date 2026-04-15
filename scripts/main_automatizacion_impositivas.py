@@ -19,24 +19,35 @@ def automatizar_impositivas(
     rds = RDS()
 
     # 1. Calcular retenciones (procesamiento + IVA + Renta + formateo RDS)
-    # CAMBIO: Reemplaza el flujo anterior de leer_base_sri → proceso1
     ##################################################
-    df_polars = calcular_retenciones(engine_data_fact)
+    try:
+        df_polars = calcular_retenciones(engine_data_fact)
+    except Exception as e:
+        logger.error(f"[automatizar_impositivas] Fallo en calcular_retenciones: {e}", exc_info=True)
+        raise
 
     # CAMBIO: Convertir Polars → Pandas (rds.carga_base_retenciones espera Pandas)
-    df = df_polars.to_pandas()
+    try:
+        df = df_polars.to_pandas()
+    except Exception as e:
+        logger.error(f"[automatizar_impositivas] Fallo al convertir Polars → Pandas: {e}", exc_info=True)
+        raise
 
     # 2. Cargar base_retenciones al RDS
     ##################################################
     logger.info("Cargando...")
-    rds.carga_base_retenciones(
-        df,
-        engine_data_fact,
-        engine_data_fact_escritura,
-        table_name="base_rucs_retenciones_pruebas",
-        schema="data_fact",
-        tipo=1,
-    )
-    # rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones',schema = 'data_qph',tipo=0)
+    try:
+        rds.carga_base_retenciones(
+            df,
+            engine_data_fact,
+            engine_data_fact_escritura,
+            table_name="base_rucs_retenciones_pruebas",
+            schema="data_fact",
+            tipo=1,
+        )
+        # rds.carga_base_retenciones(df, engine_data_fact, engine_data_fact_escritura, table_name = 'base_rucs_retenciones',schema = 'data_qph',tipo=0)
+    except Exception as e:
+        logger.error(f"[automatizar_impositivas] Fallo en carga_base_retenciones: {e}", exc_info=True)
+        raise
 
     logger.info("Proceso terminado")
