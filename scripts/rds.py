@@ -345,13 +345,26 @@ class RDS:
 
         if tabla_existe:
             logger.info("La tabla existe. Verificando compatibilidad de columnas...")
-            columnas_sql = [
-                col["name"].lower()
+            db_cols_info = {
+                col["name"].lower(): getattr(col["type"], "length", None)
                 for col in inspector.get_columns(table_name, schema=schema)
-            ]
-            columnas_df = [col.lower() for col in df.columns]
+            }
+            def_cols_info = {
+                col.name.lower(): getattr(col.type, "length", None)
+                for col in tabla_retenciones.columns
+            }
 
-            if sorted(columnas_sql) == sorted(columnas_df):
+            mismatches = {
+                col: (db_cols_info.get(col), def_cols_info.get(col))
+                for col in def_cols_info
+                if db_cols_info.get(col) != def_cols_info.get(col)
+            }
+            if mismatches:
+                logger.info(f"Diferencias de esquema detectadas: {mismatches}")
+
+            esquemas_coinciden = db_cols_info == def_cols_info
+
+            if esquemas_coinciden:
                 try:
                     with engine_data_fact_escritura.begin() as connection:
                         connection.execute(text(f"TRUNCATE TABLE {full_table_name}"))
@@ -387,6 +400,17 @@ class RDS:
                 logging.error("Error al crear la tabla '%s': %s", full_table_name, e)
                 raise
 
+        # Auditoría previa: loguea valores de texto que superen 300 caracteres
+        cols_texto = df.select_dtypes(include="object").columns
+        for col in cols_texto:
+            mask = df[col].astype(str).str.len() > 300
+            if mask.any():
+                ejemplos = df.loc[mask, col].head(3).tolist()
+                logger.error(
+                    f"[pre-insert] Columna '{col}' tiene {mask.sum()} valores con más de 300 chars. "
+                    f"Ejemplos: {ejemplos}"
+                )
+
         total_filas = len(df)
         for i in range(0, total_filas, separacion):
             bloque = df.iloc[i : i + separacion]
@@ -406,18 +430,18 @@ class RDS:
                     )
                     break
                 except SQLAlchemyError as e:
-                    logging.warning(
-                        "Error al insertar bloque %d-%d: %s", i, i + len(bloque), e
+                    logger.error(
+                        f"[to_sql ERROR] Intento {intento}/{intentos_max} — bloque {i}-{i + len(bloque)}: {str(e)[:500]}",
+                        exc_info=True,
                     )
-                    logger.info("[to_sql ERROR]", str(e)[:500])
                     time.sleep(5 * intento)
                     intento += 1
             else:
-                logging.error(
-                    "Fallo persistente al insertar bloque %d-%d. El bloque va a omitirse",
-                    i,
-                    i + len(bloque),
+                msg = (
+                    f"Fallo persistente al insertar bloque {i}-{i + len(bloque)} "
+                    f"tras {intentos_max} intentos. Proceso abortado."
                 )
-                continue
+                logger.error(msg)
+                raise RuntimeError(msg)
 
         logger.info("Carga al RDS terminada correctamente")
