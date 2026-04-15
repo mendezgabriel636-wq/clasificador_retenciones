@@ -251,7 +251,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     FROM ciiu_clasificado_retencion_iva_bien_servicio_v6;
     """
 
-    ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact)
+    ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact, infer_schema_length=None)
 
     ciiu_clasificado = ciiu_clasificado.with_columns(
         pl.col("codigo_ciiu")
