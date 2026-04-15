@@ -2,6 +2,13 @@ import polars as pl
 
 from sqlalchemy.engine import Engine
 
+try:
+    from app.Utils.logger_config import LoggerManager
+    logger = LoggerManager(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+
 
 def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     # =========================================================================
@@ -10,7 +17,7 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     # =========================================================================
     query_sri = """
     SELECT
-        numero_ruc, razon_social, estado_contribuyente, estado_establecimiento, actividad_economica, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, agente_retencion, contribuyente_especial, fecha_actualizacion, nombre_fantasia_comercial, numero_establecimiento, id_establecimiento, fecha_inicio_actividades_comercio, fecha_actualizacion_comercio, fecha_cese_comercio, fecha_reinicio_actividades_comercio, direccion_completa, motivo_cancelacion_suspension, contribuyente_fantasma, transacciones_inexistente, nombre_representante_legal, identificacion_representante_legal, representantes_legales 
+        numero_ruc, razon_social, estado_contribuyente, estado_establecimiento, actividad_economica, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, agente_retencion, contribuyente_especial, fecha_actualizacion, nombre_fantasia_comercial, numero_establecimiento, id_establecimiento, fecha_inicio_actividades_comercio, fecha_actualizacion_comercio, fecha_cese_comercio, fecha_reinicio_actividades_comercio, direccion_completa, motivo_cancelacion_suspension, contribuyente_fantasma, transacciones_inexistente, nombre_representante_legal, identificacion_representante_legal, representantes_legales
         FROM base_rucs_sri;
     """
 
@@ -25,11 +32,13 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     try:
         df_base_rucs_sri = pl.read_database(query_sri, connection=engine_data_fact)
     except Exception as e:
+        logger.error(f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}", exc_info=True)
         raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}") from e
 
     try:
         df_base_rucs_catastro = pl.read_database(query_catastro, connection=engine_data_fact)
     except Exception as e:
+        logger.error(f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}", exc_info=True)
         raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}") from e
 
     return df_base_rucs_sri, df_base_rucs_catastro
@@ -43,6 +52,7 @@ def consulta_excel(engine_data_fact: Engine) -> pl.DataFrame:
     try:
         return pl.read_database(query_ciiu, connection=engine_data_fact)
     except Exception as e:
+        logger.error(f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}", exc_info=True)
         raise RuntimeError(f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}") from e
 
 
@@ -56,6 +66,7 @@ def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
     try:
         return pl.read_database(query_correccion, connection=engine_data_fact)
     except Exception as e:
+        logger.error(f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}", exc_info=True)
         raise RuntimeError(f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}") from e
 
 
@@ -109,11 +120,9 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     longitud_ciiu_catastros_no_inec = len(ciiu_catastro - ciiu_inec)
 
     if longitud_ciiu_catastros_no_inec > 0:
-        print(
-            f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec"
-        )
+        logger.info(f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec")
     else:
-        print("Hay igual o más en Inec que en catastro")
+        logger.info("Hay igual o más en Inec que en catastro")
 
     # =====================
     # Procesamiento Base_rucs_sri
@@ -165,7 +174,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     longitud_catastro_sri_no_inec = len(
         catastro_sri_no_inec.unique(subset=["actividad_economica"])
     )
-    print(
+    logger.info(
         f"Hay {longitud_catastro_sri_no_inec} actividades económicas que tienen catastro y sri pero no inec"
     )
 
@@ -243,15 +252,12 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         how="diagonal",
     )
 
-    print(
-        len(
-            base_rucs_sri_corregido_catastro.filter(pl.col("CODIGO").is_null()).unique(
-                "actividad_economica"
-            )["actividad_economica"]
-        )
+    logger.info(
+        f"Actividades económicas sin código CIIU: "
+        f"{len(base_rucs_sri_corregido_catastro.filter(pl.col('CODIGO').is_null()).unique('actividad_economica')['actividad_economica'])}"
     )
 
-    print(
+    logger.info(
         f"Archivo guardado con {len(base_rucs_sri_corregido_catastro.unique('numero_ruc'))} registros únicos"
     )
 
@@ -265,6 +271,10 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     try:
         ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact, infer_schema_length=None)
     except Exception as e:
+        logger.error(
+            f"[procesamiento] Fallo al leer 'ciiu_clasificado_retencion_iva_bien_servicio_v6': {e}",
+            exc_info=True,
+        )
         raise RuntimeError(
             f"[procesamiento] Fallo al leer 'ciiu_clasificado_retencion_iva_bien_servicio_v6': {e}"
         ) from e
@@ -285,6 +295,12 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
             ]
         )
     except Exception as e:
+        logger.error(
+            f"[procesamiento] Fallo al procesar columnas de 'ciiu_clasificado' — "
+            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, Claude_clasificacion_probabilidad. "
+            f"Columnas disponibles: {ciiu_clasificado.columns}. Error: {e}",
+            exc_info=True,
+        )
         raise RuntimeError(
             f"[procesamiento] Fallo al procesar columnas de 'ciiu_clasificado' — "
             f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, Claude_clasificacion_probabilidad. "
