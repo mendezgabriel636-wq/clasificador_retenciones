@@ -312,6 +312,6 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
 
     merge_sri_clasificacion_ciiu = rucs_sri_corregida.join(
         ciiu_clasificado, right_on="codigo_ciiu_sin_punto", left_on="CODIGO", how="left"
-    )
+    ).unique("numero_ruc")
 
     return merge_sri_clasificacion_ciiu
