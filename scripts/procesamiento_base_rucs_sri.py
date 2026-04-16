@@ -252,10 +252,12 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         how="diagonal",
     )
 
+    serie_sin_actividad = base_rucs_sri_corregido_catastro.filter(pl.col('CODIGO').is_null() & pl.col('CODIGO') !="" ).unique('actividad_economica')['actividad_economica'].to_list()
+
     logger.info(
         f"Actividades económicas sin código CIIU: "
-        f"{len(base_rucs_sri_corregido_catastro.filter(pl.col('CODIGO').is_null()).unique('actividad_economica')['actividad_economica'])}, es:"
-        f"{base_rucs_sri_corregido_catastro.filter(pl.col('CODIGO').is_null()).unique('actividad_economica')['actividad_economica']}"
+        f"{len(serie_sin_actividad)}, es:"
+        f"{serie_sin_actividad}"
     )
 
     logger.info(
