@@ -400,16 +400,16 @@ class RDS:
                 logging.error("Error al crear la tabla '%s': %s", full_table_name, e)
                 raise
 
-        # Auditoría previa: loguea valores de texto que superen 300 caracteres
-        cols_texto = df.select_dtypes(include="object").columns
-        for col in cols_texto:
-            mask = df[col].astype(str).str.len() > 300
-            if mask.any():
-                ejemplos = df.loc[mask, col].head(3).tolist()
-                logger.error(
-                    f"[pre-insert] Columna '{col}' tiene {mask.sum()} valores con más de 300 chars. "
-                    f"Ejemplos: {ejemplos}"
-                )
+        # # Auditoría previa: loguea valores de texto que superen 300 caracteres
+        # cols_texto = df.select_dtypes(include="object").columns
+        # for col in cols_texto:
+        #     mask = df[col].astype(str).str.len() > 300
+        #     if mask.any():
+        #         ejemplos = df.loc[mask, col].head(3).tolist()
+        #         logger.error(
+        #             f"[pre-insert] Columna '{col}' tiene {mask.sum()} valores con más de 300 chars. "
+        #             f"Ejemplos: {ejemplos}"
+        #         )
 
         total_filas = len(df)
         for i in range(0, total_filas, separacion):
