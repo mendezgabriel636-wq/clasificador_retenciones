@@ -344,7 +344,7 @@ class RDS:
         tabla_existe = inspector.has_table(table_name, schema=schema)
 
         if tabla_existe:
-            logger.info("La tabla existe. Verificando compatibilidad de columnas...")
+            logger.info(f"La tabla {table_name} existe. Verificando compatibilidad de columnas...")
             db_cols_info = {
                 col["name"].lower(): getattr(col["type"], "length", None)
                 for col in inspector.get_columns(table_name, schema=schema)
