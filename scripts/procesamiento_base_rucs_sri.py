@@ -176,7 +176,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         pl.col("numero_ruc").cast(pl.Utf8).str.len_chars() >= 9
     )
 
-    df_base_rucs_sri = df_base_rucs_sri.sort("matriz", ascending=True).unique(
+    df_base_rucs_sri = df_base_rucs_sri.sort("matriz", descending=True).unique(
         subset=["numero_ruc"]
     )
 
