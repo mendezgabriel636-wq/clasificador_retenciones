@@ -50,6 +50,8 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     query_catastro = """
     SELECT
         numero_ruc,
+        id_establecimiento,
+        matriz,
         codigo_ciiu,
         actividad_economica
     FROM base_rucs_catastro;
@@ -128,9 +130,18 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     # Procesamiento Catastro
     # =====================
-    df_base_rucs_catastro = df_base_rucs_catastro.rename(
-        {"actividad_economica": "actividad_economica_catastro"}
-    ).unique(subset=["numero_ruc"]).drop('matriz')
+    # CAMBIO: dedup por id_establecimiento (no por numero_ruc) y filtrar matriz=1.
+    # Un mismo RUC puede tener N establecimientos en el catastro, cada uno con
+    # su propio codigo_ciiu. Joinear por numero_ruc duplicaba filas y el unique
+    # final agarraba un CIIU al azar (de una sucursal), provocando que el código
+    # no correspondiera a la descripción.
+    df_base_rucs_catastro = (
+        df_base_rucs_catastro
+        .filter(pl.col("matriz") == 1)
+        .rename({"actividad_economica": "actividad_economica_catastro"})
+        .unique(subset=["id_establecimiento"])
+        .drop("matriz")
+    )
 
     # =====================
     # Procesamiento INEC
@@ -185,12 +196,14 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     # Joins: sri <--- catastro <--- inec
     # =====================
+    # CAMBIO: join por id_establecimiento (no por numero_ruc) para garantizar
+    # 1-a-1 contra la matriz del catastro.
     catastro_inec = df_base_rucs_catastro.join(
         df_inec, right_on="CODIGO", left_on="codigo_ciiu", how="left"
     )
     sri_catastro_inec = df_base_rucs_sri.join(
-        catastro_inec, on="numero_ruc", how="left"
-    )
+        catastro_inec, on="id_establecimiento", how="left"
+    ).drop("numero_ruc_right")  # el catastro trae su propio numero_ruc, lo descartamos
 
     catastro_sri_no_inec = sri_catastro_inec.filter(
         pl.col("DESCRIPCION_INEC").is_null()
