@@ -138,7 +138,6 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         df_base_rucs_catastro
         .rename({"actividad_economica": "actividad_economica_catastro"})
         .unique(subset=["id_establecimiento"])
-        .drop("matriz")
     )
 
     # =====================
