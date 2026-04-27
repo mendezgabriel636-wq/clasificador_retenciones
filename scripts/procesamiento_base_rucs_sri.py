@@ -4,9 +4,11 @@ from sqlalchemy.engine import Engine
 
 try:
     from app.Utils.logger_config import LoggerManager
+
     logger = LoggerManager(__name__)
 except ImportError:
     import logging
+
     logger = logging.getLogger(__name__)
 
 
@@ -44,7 +46,7 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
         identificacion_representante_legal,
         representantes_legales,
         matriz
-        FROM base_rucs_sri;
+    FROM base_rucs_sri;
     """
 
     query_catastro = """
@@ -58,14 +60,22 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     try:
         df_base_rucs_sri = pl.read_database(query_sri, connection=engine_data_fact)
     except Exception as e:
-        logger.error(f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}", exc_info=True)
+        logger.error(
+            f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}", exc_info=True
+        )
         raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_sri': {e}") from e
 
     try:
-        df_base_rucs_catastro = pl.read_database(query_catastro, connection=engine_data_fact)
+        df_base_rucs_catastro = pl.read_database(
+            query_catastro, connection=engine_data_fact
+        )
     except Exception as e:
-        logger.error(f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}", exc_info=True)
-        raise RuntimeError(f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}") from e
+        logger.error(
+            f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}", exc_info=True
+        )
+        raise RuntimeError(
+            f"[consulta_sql] Fallo al leer 'base_rucs_catastro': {e}"
+        ) from e
 
     return df_base_rucs_sri, df_base_rucs_catastro
 
@@ -78,7 +88,9 @@ def consulta_excel(engine_data_fact: Engine) -> pl.DataFrame:
     try:
         return pl.read_database(query_ciiu, connection=engine_data_fact)
     except Exception as e:
-        logger.error(f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}", exc_info=True)
+        logger.error(
+            f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}", exc_info=True
+        )
         raise RuntimeError(f"[consulta_excel] Fallo al leer 'ciiu_nivel6': {e}") from e
 
 
@@ -92,8 +104,13 @@ def consulta_excel_correcciones(engine_data_fact: Engine) -> pl.DataFrame:
     try:
         return pl.read_database(query_correccion, connection=engine_data_fact)
     except Exception as e:
-        logger.error(f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}", exc_info=True)
-        raise RuntimeError(f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}") from e
+        logger.error(
+            f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}",
+            exc_info=True,
+        )
+        raise RuntimeError(
+            f"[consulta_excel_correcciones] Fallo al leer 'correccion_final': {e}"
+        ) from e
 
 
 # =========================================================================
@@ -130,7 +147,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     df_base_rucs_catastro = df_base_rucs_catastro.rename(
         {"actividad_economica": "actividad_economica_catastro"}
-    ).unique(subset=["numero_ruc"]).drop('matriz')
+    ).unique(subset=["numero_ruc"])
 
     # =====================
     # Procesamiento INEC
@@ -146,7 +163,9 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     longitud_ciiu_catastros_no_inec = len(ciiu_catastro - ciiu_inec)
 
     if longitud_ciiu_catastros_no_inec > 0:
-        logger.info(f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec")
+        logger.info(
+            f"Hay {longitud_ciiu_catastros_no_inec} más códigos en catastro que en inec"
+        )
     else:
         logger.info("Hay igual o más en Inec que en catastro")
 
@@ -157,9 +176,9 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         pl.col("numero_ruc").cast(pl.Utf8).str.len_chars() >= 9
     )
 
-    df_base_rucs_sri = df_base_rucs_sri.sort(
-        "matriz", ascending=True
-    ).unique(subset=["numero_ruc"])
+    df_base_rucs_sri = df_base_rucs_sri.sort("matriz", ascending=True).unique(
+        subset=["numero_ruc"]
+    )
 
     # =========================================================================
     # CAMBIO: tipo_contribuyente incluido explícitamente (lo necesitan
@@ -278,7 +297,13 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         how="diagonal",
     )
 
-    serie_sin_actividad = base_rucs_sri_corregido_catastro.filter(pl.col('CODIGO').is_null() & (pl.col('CODIGO') !="") ).unique('actividad_economica')['actividad_economica'].to_list()
+    serie_sin_actividad = (
+        base_rucs_sri_corregido_catastro.filter(
+            pl.col("CODIGO").is_null() & (pl.col("CODIGO") != "")
+        )
+        .unique("actividad_economica")["actividad_economica"]
+        .to_list()
+    )
 
     logger.info(
         f"Actividades económicas sin código CIIU: "
@@ -298,7 +323,9 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     """
 
     try:
-        ciiu_clasificado = pl.read_database(query_clasificado, connection=engine_data_fact, infer_schema_length=None)
+        ciiu_clasificado = pl.read_database(
+            query_clasificado, connection=engine_data_fact, infer_schema_length=None
+        )
     except Exception as e:
         logger.error(
             f"[procesamiento] Fallo al leer 'ciiu_clasificado_retencion_iva_bien_servicio_v6': {e}",
