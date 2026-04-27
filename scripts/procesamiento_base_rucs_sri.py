@@ -51,7 +51,6 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     SELECT
         numero_ruc,
         id_establecimiento,
-        matriz,
         codigo_ciiu,
         actividad_economica
     FROM base_rucs_catastro;
@@ -137,7 +136,6 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # no correspondiera a la descripción.
     df_base_rucs_catastro = (
         df_base_rucs_catastro
-        .filter(pl.col("matriz") == 1)
         .rename({"actividad_economica": "actividad_economica_catastro"})
         .unique(subset=["id_establecimiento"])
         .drop("matriz")
