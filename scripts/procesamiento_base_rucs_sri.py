@@ -17,7 +17,33 @@ def consulta_sql(engine_data_fact: Engine) -> tuple[pl.DataFrame, pl.DataFrame]:
     # =========================================================================
     query_sri = """
     SELECT
-        numero_ruc, razon_social, estado_contribuyente, estado_establecimiento, actividad_economica, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, agente_retencion, contribuyente_especial, fecha_actualizacion, nombre_fantasia_comercial, numero_establecimiento, id_establecimiento, fecha_inicio_actividades_comercio, fecha_actualizacion_comercio, fecha_cese_comercio, fecha_reinicio_actividades_comercio, direccion_completa, motivo_cancelacion_suspension, contribuyente_fantasma, transacciones_inexistente, nombre_representante_legal, identificacion_representante_legal, representantes_legales
+        numero_ruc,
+        razon_social,
+        estado_contribuyente,
+        estado_establecimiento,
+        actividad_economica,
+        tipo_contribuyente,
+        clase_contribuyente,
+        categoria,
+        obligado_llevar_contabilidad,
+        agente_retencion,
+        contribuyente_especial,
+        fecha_actualizacion,
+        nombre_fantasia_comercial,
+        numero_establecimiento,
+        id_establecimiento,
+        fecha_inicio_actividades_comercio,
+        fecha_actualizacion_comercio,
+        fecha_cese_comercio,
+        fecha_reinicio_actividades_comercio,
+        direccion_completa,
+        motivo_cancelacion_suspension,
+        contribuyente_fantasma,
+        transacciones_inexistente,
+        nombre_representante_legal,
+        identificacion_representante_legal,
+        representantes_legales,
+        matriz
         FROM base_rucs_sri;
     """
 
@@ -104,7 +130,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     # =====================
     df_base_rucs_catastro = df_base_rucs_catastro.rename(
         {"actividad_economica": "actividad_economica_catastro"}
-    ).unique(subset=["numero_ruc"])
+    ).unique(subset=["numero_ruc"]).drop('matriz')
 
     # =====================
     # Procesamiento INEC
@@ -132,7 +158,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     )
 
     df_base_rucs_sri = df_base_rucs_sri.sort(
-        "fecha_actualizacion", descending=True
+        "matriz", ascending=True
     ).unique(subset=["numero_ruc"])
 
     # =========================================================================
