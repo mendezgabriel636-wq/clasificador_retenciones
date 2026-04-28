@@ -166,7 +166,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     )
 
     df_base_rucs_sri = df_base_rucs_sri.sort(
-        "matriz", ascending=True
+        "matriz", ascending=False
     ).unique(subset=["numero_ruc"])
 
     # =========================================================================
