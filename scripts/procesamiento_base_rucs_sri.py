@@ -266,22 +266,30 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
         pl.col("actividad_economica").is_not_null() & pl.col("CODIGO").is_not_null()
     )
 
+    # ----- VÍA 1: catastro + INEC -----
     corregidos_catastro_inec = (
         corregidos_catastro_inec.drop("actividad_economica_catastro")
         .rename({"codigo_ciiu": "CODIGO"})
-        .with_columns(pl.lit(1).alias("correcion_catastro_inec_ciiu"))
+        .with_columns([
+            pl.col("DESCRIPCION_INEC").alias("actividad_economica"),
+            pl.lit(1).alias("correcion_catastro_inec_ciiu"),
+        ])
     )
 
-    corregidos_sri_no_inec = corregidos_sri_no_inec.with_columns(
-        [
-            pl.col("razon_social").alias("DESCRIPCION_INEC"),
-            pl.lit(1).alias("correcion_sri_inec_desc"),
-        ]
-    )
+    # ----- VÍA 2: texto SRI ↔ INEC -----
+    # El join consumió DESCRIPCION_INEC. actividad_economica YA es la oficial
+    # porque matcheó textualmente contra ella. La copiamos a DESCRIPCION_INEC
+    # para que las 3 vías queden con el mismo esquema antes del concat.
+    corregidos_sri_no_inec = corregidos_sri_no_inec.with_columns([
+        pl.col("actividad_economica").alias("DESCRIPCION_INEC"),
+        pl.lit(1).alias("correcion_sri_inec_desc"),
+    ])
 
-    corregido_semanticamente = corregido_semanticamente.with_columns(
-        pl.lit(1).alias("correcion_semantica")
-    )
+    # ----- VÍA 3: corrección manual desde Excel -----
+    corregido_semanticamente = corregido_semanticamente.with_columns([
+        pl.col("DESCRIPCION_INEC").alias("actividad_economica"),
+        pl.lit(1).alias("correcion_semantica"),
+    ])
 
     base_rucs_sri_corregido_catastro = pl.concat(
         [corregidos_catastro_inec, corregidos_sri_no_inec, corregido_semanticamente],
