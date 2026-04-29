@@ -377,13 +377,13 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
     except Exception as e:
         logger.error(
             f"[procesamiento] Fallo al procesar columnas de 'ciiu_clasificado' — "
-            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, Claude_clasificacion_probabilidad. "
+            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, claude_clasificacion_probabilidad. "
             f"Columnas disponibles: {ciiu_clasificado.columns}. Error: {e}",
             exc_info=True,
         )
         raise RuntimeError(
             f"[procesamiento] Fallo al procesar columnas de 'ciiu_clasificado' — "
-            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, Claude_clasificacion_probabilidad. "
+            f"verifique que existan: codigo_ciiu, descripcion, nivel, confianza, claude_clasificacion_probabilidad. "
             f"Columnas disponibles: {ciiu_clasificado.columns}. Error: {e}"
         ) from e
 
