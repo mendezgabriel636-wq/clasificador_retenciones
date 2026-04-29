@@ -303,8 +303,11 @@ class RDS:
                 Column("campo_formulario_104_iva_modificado", String(50)),
                 Column("codigo_anexo_iva", String(50)),
                 Column("codigo_anexo_iva_modificado", String(50)),
+                Column("porcentaje_retencion_iva_modificado", String(30)),
+                Column("porcentaje_retencion_renta_modificado", String(30)),
                 Column("codigo_anexo_ir_modificado", String(10)),
                 Column("campo_formulario_103_ir", String(10)),
+                Column("campo_formulario_103_ir_modificado", String(10)),
                 Column("fecha_carga", DateTime),
             )
         if tipo == 0:
