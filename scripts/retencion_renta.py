@@ -522,10 +522,12 @@ def aplicar_retencion_renta(df: pl.DataFrame) -> pl.DataFrame:
 
     df_modificado = df.filter(pl.col("probabilidad_vende_servicios") == "ALTA")
 
-    df_modificado = df_modificado.with_columns((pl.when((pl.col("tipo_concepto_iva")=="BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA")))
-                            .then("SERVICIO_MANO_OBRA")
-                            .otherwise(pl.col("tipo_concepto_ir"))
-                            .alias("tipo_concepto_ir"))
+    df_modificado = df_modificado.with_columns(
+        pl.when((pl.col("tipo_concepto_iva") == "BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA"))
+        .then(pl.lit("SERVICIO_MANO_OBRA"))
+        .otherwise(pl.col("tipo_concepto_ir"))
+        .alias("tipo_concepto_ir")
+    )
     resultado_modificado = (
         df_modificado.with_columns(
             pl.struct(columnas)
