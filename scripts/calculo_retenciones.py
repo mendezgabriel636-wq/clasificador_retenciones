@@ -52,7 +52,7 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         "codigo_sri_renta",
         "codigo_sri_renta_modificado",
         "porcentaje_renta",
-        "porcentaje_renta_modificado"
+        "porcentaje_renta_modificado",
         "descripcion_renta",
         "descripcion_renta_modificado",
         "base_calculo_renta",
@@ -84,7 +84,7 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
                 "porcentaje_retencion_iva",
                 "motivo_iva",
                 "porcentaje_retencion_iva_modificado",
-                "motivo_iva_modificado"
+                "motivo_iva_modificado",
                 # Renta
                 "codigo_sri_renta",
                 "codigo_sri_renta_modificado",
