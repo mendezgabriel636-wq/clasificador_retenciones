@@ -357,65 +357,32 @@ class RDS:
                 Column("fecha_carga", DateTime),
             )
 
-        inspector = inspect(engine_data_fact)
+# Política: siempre dropear y recrear con el schema definido en código.
+        # Esto garantiza que el schema de MySQL coincide con `tabla_retenciones`
+        # sin tener que mantener lógica de comparación o ALTER TABLE.
+        # ⚠️ Pierde permisos GRANT a nivel tabla y rompe FKs entrantes (si existen).
+
+        inspector = inspect(engine_data_fact_escritura)
         tabla_existe = inspector.has_table(table_name, schema=schema)
 
         if tabla_existe:
-            logger.info(f"La tabla {table_name} existe. Verificando compatibilidad de columnas...")
-            db_cols_info = {
-                col["name"].lower(): getattr(col["type"], "length", None)
-                for col in inspector.get_columns(table_name, schema=schema)
-            }
-            def_cols_info = {
-                col.name.lower(): getattr(col.type, "length", None)
-                for col in tabla_retenciones.columns
-            }
-
-            mismatches = {
-                col: (db_cols_info.get(col), def_cols_info.get(col))
-                for col in def_cols_info
-                if db_cols_info.get(col) != def_cols_info.get(col)
-            }
-            if mismatches:
-                logger.info(f"Diferencias de esquema detectadas: {mismatches}")
-
-            esquemas_coinciden = db_cols_info == def_cols_info
-
-            if esquemas_coinciden:
-                try:
-                    with engine_data_fact_escritura.begin() as connection:
-                        connection.execute(text(f"TRUNCATE TABLE {full_table_name}"))
-                    logger.info("truncate ok")
-                except SQLAlchemyError as e:
-                    logging.error(
-                        "Error al truncar la tabla '%s': %s", full_table_name, e
-                    )
-                    raise
-            else:
-                logger.info(
-                    "La estructura no coincide. Se eliminará y recreará la tabla..."
-                )
-                try:
-                    with engine_data_fact_escritura.begin() as connection:
-                        connection.execute(text(f"DROP TABLE {full_table_name}"))
-                    logger.info("Tabla eliminada correctamente.")
-                    tabla_retenciones.create(bind=engine_data_fact_escritura)
-                    logger.info("Tabla recreada con estructura definida.")
-                except SQLAlchemyError as e:
-                    logging.error(
-                        "Error al recrear la tabla '%s': %s", full_table_name, e
-                    )
-                    raise
-        else:
-            logger.info(
-                f"La tabla {full_table_name} no existe. Se va a crear con la estructura definida..."
-            )
+            logger.info(f"La tabla {full_table_name} existe. Se eliminará para recrearla...")
             try:
-                tabla_retenciones.create(bind=engine_data_fact_escritura)
-                logger.info("Tabla creada correctamente.")
+                with engine_data_fact_escritura.begin() as connection:
+                    connection.execute(text(f"DROP TABLE {full_table_name}"))
+                logger.info("Tabla eliminada correctamente.")
             except SQLAlchemyError as e:
-                logging.error("Error al crear la tabla '%s': %s", full_table_name, e)
+                logger.error(f"Error al eliminar la tabla '{full_table_name}': {e}")
                 raise
+        else:
+            logger.info(f"La tabla {full_table_name} no existe. Se creará desde cero.")
+
+        try:
+            tabla_retenciones.create(bind=engine_data_fact_escritura)
+            logger.info("Tabla creada con la estructura definida.")
+        except SQLAlchemyError as e:
+            logger.error(f"Error al crear la tabla '{full_table_name}': {e}")
+            raise
 
         # # Auditoría previa: loguea valores de texto que superen 300 caracteres
         # cols_texto = df.select_dtypes(include="object").columns
