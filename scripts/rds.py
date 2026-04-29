@@ -152,7 +152,10 @@ class RDS:
                 "fecha_carga",
                 "campo_formulario_104_iva_modificado",
                 "codigo_anexo_iva_modificado",
-                "codigo_anexo_ir_modificado"
+                "porcentaje_retencion_iva_modificado",
+                "porcentaje_retencion_renta_modificado",
+                "codigo_anexo_ir_modificado",
+                "campo_formulario_103_ir_modificado"
             ]
 
             missing = [col for col in columnas_requeridas if col not in df.columns]
@@ -248,7 +251,11 @@ class RDS:
                 "campo_formulario_103_ir",
                 "fecha_carga",
                 "campo_formulario_104_iva_modificado",
-                "codigo_anexo_iva_modificado"
+                "codigo_anexo_iva_modificado",
+                "porcentaje_retencion_iva_modificado",
+                "porcentaje_retencion_renta_modificado",
+                "codigo_anexo_ir_modificado",
+                "campo_formulario_103_ir_modificado"
             ]
             faltan = [c for c in columnas_requeridas_0 if c not in df.columns]
             for c in faltan:

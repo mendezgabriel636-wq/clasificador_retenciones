@@ -171,19 +171,24 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         ) from e
 
     try:
-        iva_renta_final = iva_renta.join(
-            tabla_retenciones,
-            left_on="codigo_sri_renta",
-            right_on="codigo_anexo_ir",
-            how="left"
-        ).rename({"codigo_sri_renta": "codigo_anexo_ir"})
-
-        iva_renta_final = iva_renta.join(
-            tabla_retenciones,
-            left_on="codigo_sri_renta_modificado",
-            right_on="codigo_anexo_ir",
-            how="left"
-        ).rename({"codigo_sri_renta": "codigo_anexo_ir_modificado"})
+        iva_renta_final = (
+            iva_renta
+            .join(
+                tabla_retenciones,
+                left_on="codigo_sri_renta",
+                right_on="codigo_anexo_ir",
+                how="left",
+            )
+            .rename({"codigo_sri_renta": "codigo_anexo_ir"})
+            .join(
+                tabla_retenciones,
+                left_on="codigo_sri_renta_modificado",
+                right_on="codigo_anexo_ir",
+                how="left",
+                suffix="_modificado",   # esto produce campo_formulario_103_ir_modificado
+            )
+            .rename({"codigo_sri_renta_modificado": "codigo_anexo_ir_modificado"})
+        )
 
     except Exception as e:
         logger.error(f"[calcular_retenciones] Paso 5 — Fallo al cruzar iva_renta con tabla_retenciones: {e}", exc_info=True)
@@ -292,7 +297,10 @@ def formatear_para_rds(df: pl.DataFrame) -> pl.DataFrame:
                 pl.col("campo_formulario_104_iva_modificado").cast(pl.Utf8),
                 pl.col("campo_formulario_103_ir").cast(pl.Utf8),
                 pl.col("codigo_anexo_iva").cast(pl.Utf8),
-                pl.col("codigo_anexo_iva_modificado").cast(pl.Utf8)
+                pl.col("codigo_anexo_iva_modificado").cast(pl.Utf8),
+                pl.col("porcentaje_retencion_renta_modificado").cast(pl.Utf8),
+                pl.col("codigo_anexo_ir_modificado").cast(pl.Utf8),
+                pl.col("campo_formulario_103_ir_modificado").cast(pl.Utf8),
             ]
         )
     except Exception as e:

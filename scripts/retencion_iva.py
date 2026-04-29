@@ -154,15 +154,15 @@ def aplicar_retencion_iva(df: pl.DataFrame) -> pl.DataFrame:
         'tipo_concepto_iva', 'excepcion_art3'
     ]
     
-    df_bienes_a_servicios = df.filter(
-        (pl.col("tipo_concepto_iva") == "BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA")
-    )
-
-    df_bienes_a_servicios = df_bienes_a_servicios.with_columns(
-        pl.when((pl.col("tipo_concepto_iva") == "BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA"))
-        .then(pl.lit("SERVICIO"))
-        .otherwise(pl.col("tipo_concepto_iva"))
-        .alias("tipo_concepto_iva")
+    df_bienes_a_servicios = (
+        df
+        .filter(
+            (pl.col("tipo_concepto_iva") == "BIEN")
+            & (pl.col("probabilidad_vende_servicios") == "ALTA")
+        )
+        .with_columns(
+            pl.lit("SERVICIO").alias("tipo_concepto_iva")
+        )
     )
     
     resultados_modificados = (
