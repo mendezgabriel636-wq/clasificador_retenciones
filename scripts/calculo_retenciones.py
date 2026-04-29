@@ -56,6 +56,7 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
         "descripcion_renta",
         "descripcion_renta_modificado",
         "base_calculo_renta",
+        "base_calculo_renta_modificado",
     ]
 
     # =========================================================================
