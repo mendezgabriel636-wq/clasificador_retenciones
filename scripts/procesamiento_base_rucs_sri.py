@@ -371,7 +371,7 @@ def procesamiento(engine_data_fact: Engine) -> pl.DataFrame:
                 "descripcion",
                 "nivel",
                 "confianza",
-                "Claude_clasificacion_probabilidad",
+                "claude_clasificacion_probabilidad",
             ]
         )
     except Exception as e:
