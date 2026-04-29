@@ -50,8 +50,11 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
     columnas_renta = [
         "numero_ruc",
         "codigo_sri_renta",
+        "codigo_sri_renta_modificado",
         "porcentaje_renta",
+        "porcentaje_renta_modificado"
         "descripcion_renta",
+        "descripcion_renta_modificado",
         "base_calculo_renta",
     ]
 
@@ -80,10 +83,16 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
                 # IVA
                 "porcentaje_retencion_iva",
                 "motivo_iva",
+                "porcentaje_retencion_iva_modificado",
+                "motivo_iva_modificado"
                 # Renta
                 "codigo_sri_renta",
+                "codigo_sri_renta_modificado",
                 "porcentaje_renta",
+                "porcentaje_renta_modificado",
                 "base_calculo_renta",
+                "base_calculo_renta_modificado",
+
                 # CAMBIO: Columnas extra de SRI para formato RDS
                 "nombre_fantasia_comercial",
                 # estado_establecimiento ya incluido arriba
@@ -116,6 +125,12 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
             pl.col("porcentaje_retencion_iva")
             .replace(campo_formulario_iva_map, default=0)
             .alias("campo_formulario_104_iva")
+        )
+
+        iva_renta = iva_renta.with_columns(
+            pl.col("porcentaje_retencion_iva_modificado")
+            .replace(campo_formulario_iva_map, default=0)
+            .alias("campo_formulario_104_iva_modificado")
         )
     except Exception as e:
         logger.error(f"[calcular_retenciones] Paso 4 — Fallo en mapeo campo_formulario_104_iva: {e}", exc_info=True)
@@ -159,8 +174,16 @@ def calcular_retenciones(engine_data_fact: Engine) -> pl.DataFrame:
             tabla_retenciones,
             left_on="codigo_sri_renta",
             right_on="codigo_anexo_ir",
-            how="left",
+            how="left"
         ).rename({"codigo_sri_renta": "codigo_anexo_ir"})
+
+        iva_renta_final = iva_renta.join(
+            tabla_retenciones,
+            left_on="codigo_sri_renta_modificado",
+            right_on="codigo_anexo_ir",
+            how="left"
+        ).rename({"codigo_sri_renta": "codigo_anexo_ir_modificado"})
+
     except Exception as e:
         logger.error(f"[calcular_retenciones] Paso 5 — Fallo al cruzar iva_renta con tabla_retenciones: {e}", exc_info=True)
         raise
@@ -190,6 +213,7 @@ def formatear_para_rds(df: pl.DataFrame) -> pl.DataFrame:
                 "obligado_llevar_contabilidad": "obligado",
                 "CODIGO": "codigo_ciiu",
                 "porcentaje_renta": "porcentaje_retencion_renta",
+                "porcentaje_renta_modificado": "porcentaje_retencion_renta_modificado",
                 "fecha_inicio_actividades_comercio": "fecha_inicio_actividades",
                 "fecha_actualizacion_comercio": "fecha_actualizacion",
                 "fecha_cese_comercio": "fecha_suspension_definitiva",
@@ -229,6 +253,9 @@ def formatear_para_rds(df: pl.DataFrame) -> pl.DataFrame:
                 pl.col("porcentaje_retencion_iva")
                 .replace({10: 9, 20: 10, 30: 1, 50: 11, 70: 2, 100: 3}, default=0)
                 .alias("codigo_anexo_iva"),
+                pl.col("porcentaje_retencion_iva_modificado")
+                .replace({10: 9, 20: 10, 30: 1, 50: 11, 70: 2, 100: 3}, default=0)
+                .alias("codigo_anexo_iva_modificado"),
                 # Constantes NaN
                 pl.lit(None).cast(pl.Utf8).alias("provincia_jurisdiccion"),
                 pl.lit(None).cast(pl.Utf8).alias("provincia_archivo_procesamiento"),
@@ -259,9 +286,12 @@ def formatear_para_rds(df: pl.DataFrame) -> pl.DataFrame:
             [
                 pl.col("porcentaje_retencion_renta").cast(pl.Utf8),
                 pl.col("porcentaje_retencion_iva").cast(pl.Utf8),
+                pl.col("porcentaje_retencion_iva_modificado").cast(pl.Utf8),
                 pl.col("campo_formulario_104_iva").cast(pl.Utf8),
+                pl.col("campo_formulario_104_iva_modificado").cast(pl.Utf8),
                 pl.col("campo_formulario_103_ir").cast(pl.Utf8),
                 pl.col("codigo_anexo_iva").cast(pl.Utf8),
+                pl.col("codigo_anexo_iva_modificado").cast(pl.Utf8)
             ]
         )
     except Exception as e:

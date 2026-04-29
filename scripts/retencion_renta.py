@@ -22,7 +22,7 @@ from typing import Tuple, Optional, Dict
 
 # =============================================================================
 # TABLA: CONCEPTOS_RETENCION_SRI (84 códigos residentes)
-# ⚠️ ACTUALIZAR cuando cambie la normativa
+# ACTUALIZAR cuando cambie la normativa
 # =============================================================================
 
 CONCEPTOS_SRI = {
@@ -500,7 +500,7 @@ def aplicar_retencion_renta(df: pl.DataFrame) -> pl.DataFrame:
         "tipo_concepto_ir",
     ]
 
-    return (
+    resultado_basico = (
         df.with_columns(
             pl.struct(columnas)
             .map_elements(calcular_retencion_renta, return_dtype=pl.List(pl.String))
@@ -519,3 +519,35 @@ def aplicar_retencion_renta(df: pl.DataFrame) -> pl.DataFrame:
         )
         .drop("resultado_renta")
     )
+
+    df_modificado = df.filter(pl.col("probabilidad_vende_servicios") == "ALTA")
+
+    df_modificado = df_modificado.with_columns((pl.when((pl.col("tipo_concepto_iva")=="BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA")))
+                            .then("SERVICIO_MANO_OBRA")
+                            .otherwise(pl.col("tipo_concepto_ir"))
+                            .alias("tipo_concepto_ir"))
+    resultado_modificado = (
+        df_modificado.with_columns(
+            pl.struct(columnas)
+            .map_elements(calcular_retencion_renta, return_dtype=pl.List(pl.String))
+            .alias("resultado_renta")
+        )
+        .with_columns(
+            [
+                pl.col("resultado_renta").list.get(0).alias("codigo_sri_renta_modificado"),
+                pl.col("resultado_renta")
+                .list.get(1)
+                .cast(pl.Float64)
+                .alias("porcentaje_renta_modificado"),
+                pl.col("resultado_renta").list.get(2).alias("descripcion_renta_modificado"),
+                pl.col("resultado_renta").list.get(3).alias("base_calculo_renta_modificado"),
+            ]
+        )
+        .drop("resultado_renta")
+        .select(["numero_ruc","codigo_sri_renta_modificado", "descripcion_renta_modificado", "base_calculo_renta_modificado", "porcentaje_renta_modificado"])
+
+    )
+    
+    resultado = resultado_basico.join(resultado_modificado, on = "numero_ruc", how = "left")
+
+    return resultado

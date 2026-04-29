@@ -150,6 +150,8 @@ class RDS:
                 "codigo_anexo_iva",
                 "campo_formulario_103_ir",
                 "fecha_carga",
+                "campo_formulario_104_iva_modificado",
+                "codigo_anexo_iva_modificado"
             ]
 
             missing = [col for col in columnas_requeridas if col not in df.columns]
@@ -244,6 +246,8 @@ class RDS:
                 "codigo_anexo_iva",
                 "campo_formulario_103_ir",
                 "fecha_carga",
+                "campo_formulario_104_iva_modificado",
+                "codigo_anexo_iva_modificado"
             ]
             faltan = [c for c in columnas_requeridas_0 if c not in df.columns]
             for c in faltan:
@@ -288,12 +292,14 @@ class RDS:
                 Column("porcentaje_retencion_iva", String(30)),
                 Column("codigo_anexo_ir", String(10)),
                 Column("campo_formulario_104_iva", String(50)),
+                Column("campo_formulario_104_iva_modificado",String(50)),
+                Column("campo_formulario_104_iva_modificado", String(50)),
                 Column("codigo_anexo_iva", String(50)),
+                Column("codigo_anexo_iva_modificado", String(50)),
                 Column("campo_formulario_103_ir", String(10)),
                 Column("fecha_carga", DateTime),
             )
         if tipo == 0:
-
             tabla_retenciones = Table(
                 table_name,
                 metadata,
@@ -334,8 +340,11 @@ class RDS:
                 Column("porcentaje_retencion_renta", String),
                 Column("porcentaje_retencion_iva", String),
                 Column("codigo_anexo_ir", String),
+                Column("codigo_anexo_ir_modificado", String),
                 Column("campo_formulario_104_iva", String),
+                Column("campo_formulario_104_iva_modificado", String),
                 Column("codigo_anexo_iva", String),
+                Column("codigo_anexo_iva_modificado", String),
                 Column("campo_formulario_103_ir", String),
                 Column("fecha_carga", DateTime),
             )

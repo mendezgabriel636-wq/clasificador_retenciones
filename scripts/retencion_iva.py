@@ -27,6 +27,7 @@ _EXCEPCIONES_ART3 = {
 }
 
 
+
 def calcular_porcentaje_retencion_iva(
     tipo_contribuyente: str,        # "PERSONAS NATURALES" o "SOCIEDADES"
     clase_contribuyente: str,       # "ESPECIAL", "OTROS", "RIMPE"
@@ -34,12 +35,13 @@ def calcular_porcentaje_retencion_iva(
     obligado_contabilidad: bool,
     contribuyente_especial: bool,
     tipo: str,                      # "BIEN", "SERVICIO", "SERVICIO_PROFESIONAL", "CONSTRUCCION", "ARRIENDO_INMUEBLE"
-    excepcion_art3: Optional[float] # 3.2, 3.4, 3.5, ... o None/NaN
+    excepcion_art3: Optional[float], # 3.2, 3.4, 3.5, ... o None/NaN
 ) -> Dict[str, any]:
 
     # =========================================================================
     # NORMALIZAR INPUTS
     # =========================================================================
+
     tipo_contrib = str(tipo_contribuyente).upper().strip() if tipo_contribuyente else ""
     es_sociedad = "SOCIEDAD" in tipo_contrib
     if not es_sociedad and "NATURAL" not in tipo_contrib:
@@ -151,6 +153,36 @@ def aplicar_retencion_iva(df: pl.DataFrame) -> pl.DataFrame:
         'obligado_llevar_contabilidad', 'contribuyente_especial',
         'tipo_concepto_iva', 'excepcion_art3'
     ]
+    
+    df_bienes_a_servicios = df.filter((pl.when((pl.col("tipo_concepto_iva")=="BIEN") & (pl.col("probabilidad_vende_servicios") == "ALTA"))))
+
+    df_bienes_a_servicios = df_bienes_a_servicios.with_columns((pl.when(pl.col("tipo_concepto_iva")=="BIEN") & pl.col("probabilidad_vende_servicios") == "ALTA")
+                         .then("SERVICIO")
+                         .otherwise(pl.col("tipo_concepto_iva"))
+                         .alias("tipo_concepto_iva"))
+    
+    resultados_modificados = (
+        df_bienes_a_servicios.with_columns(
+            pl.struct(columnas)
+            .map_elements(lambda row: calcular_porcentaje_retencion_iva(
+                tipo_contribuyente=row['tipo_contribuyente'],
+                clase_contribuyente=row['clase_contribuyente'],
+                categoria=row['categoria'],
+                obligado_contabilidad=row['obligado_llevar_contabilidad'],
+                contribuyente_especial=row['contribuyente_especial'],
+                tipo=row['tipo_concepto_iva'],
+                excepcion_art3=row['excepcion_art3']
+            ), return_dtype=pl.Struct({"porcentaje": pl.Int64, "articulo": pl.Utf8, "motivo": pl.Utf8}))
+            .alias('resultado_iva')
+        )
+        .with_columns([
+            pl.col('resultado_iva').struct.field('porcentaje').alias('porcentaje_retencion_iva_modificado'),
+            pl.col('resultado_iva').struct.field('articulo').alias('articulo_iva_modificado'),
+            pl.col('resultado_iva').struct.field('motivo').alias('motivo_iva_modificado'),
+        ])
+        .drop('resultado_iva')
+        .select(["numero_ruc","porcentaje_retencion_iva_modificado", "articulo_iva_modificado", "motivo_iva_modificado"])
+    )
 
     resultados = (
         df.with_columns(
@@ -174,4 +206,6 @@ def aplicar_retencion_iva(df: pl.DataFrame) -> pl.DataFrame:
         .drop('resultado_iva')
     )
 
-    return resultados
+    resultados_final = resultados.join(resultados_modificados, on="numero_ruc", how = "left")
+
+    return resultados_final
