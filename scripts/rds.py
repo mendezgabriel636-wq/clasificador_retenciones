@@ -151,7 +151,8 @@ class RDS:
                 "campo_formulario_103_ir",
                 "fecha_carga",
                 "campo_formulario_104_iva_modificado",
-                "codigo_anexo_iva_modificado"
+                "codigo_anexo_iva_modificado",
+                "codigo_anexo_ir_modificado"
             ]
 
             missing = [col for col in columnas_requeridas if col not in df.columns]
