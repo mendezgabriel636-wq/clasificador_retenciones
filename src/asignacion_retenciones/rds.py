@@ -1,0 +1,30 @@
+crear_tabla_sql = """
+CREATE TABLE base_retenciones (
+    numero_ruc BIGINT,
+    numero_establecimiento_matriz INT,
+    razon_social VARCHAR(1000),
+    estado_contribuyente VARCHAR(120) NOT NULL,
+    clase_contribuyente VARCHAR(120) NOT NULL,
+    obligado INT NOT NULL,
+    agente_retencion INT DEFAULT(0),
+    contribuyente_especial INT DEFAULT(0),
+    contribuyente_fantasma INT DEFAULT(0),
+    tipo_contribuyente INT NOT NULL,
+    codigo_ciiu VARCHAR(10),
+    actividad_economica VARCHAR(1000) NOT NULL,
+    categoria VARCHAR(1000) NOT NULL,
+    nro_campo INT NOT NULL,
+    porcentaje_retencion_renta DECIMAL(4,2) NOT NULL,
+    campo_formulario_103_ir INT NOT NULL,
+    codigo_anexo_ir INT NOT NULL,
+    porcentaje_retencion_iva DECIMAL(4,2) NOT NULL,
+    campo_formulario_104_iva DECIMAL(4,2) NOT NULL,
+    codigo_anexo_iva DECIMAL(4,2) NOT NULL,
+    fecha_carga DATE NOT NULL,
+    fecha_inicio_actividades DATE NOT NULL,
+    fecha_actualizacion DATE,
+    fecha_suspension_definitiva DATE,
+    fecha_reinicio_actividades DATE,
+    PRIMARY KEY (numero_ruc, numero_establecimiento_matriz)
+)
+"""

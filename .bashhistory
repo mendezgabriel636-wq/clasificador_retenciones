@@ -1,0 +1,15 @@
+uv init
+
+uv add polars, rapidfuzz
+
+uv pip install -e .
+
+uv run python -m spacy download es_core_news_sm
+
+uv run python <<EOF
+import comprobaciones as comp
+_, rucs_sin_matriz = comp.comprobar_todo_ruc_tiene_matriz()
+nro_rucs_sin_matriz = len(rucs_sin_matriz)
+rucs_sin_matriz_str = "\n".join([str(int(rucs)) for rucs in rucs_sin_matriz])
+print(f"Existen {nro_rucs_sin_matriz}. Ejemplos:\n{rucs_sin_matriz_str}")
+EOF
