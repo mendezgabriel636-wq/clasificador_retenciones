@@ -1,0 +1,73 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="F45peB5RZuVqrb6ixyEP">
+    <mxGraphModel dx="822" dy="364" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n1XSZUZqveBruTZGeArx-8" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="n1XSZUZqveBruTZGeArx-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" value="" vertex="1">
+          <mxGeometry height="80" width="80" x="400" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-10" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="n1XSZUZqveBruTZGeArx-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-2" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontSize=10;" value="&lt;div&gt;&amp;nbsp; &amp;nbsp;&lt;b&gt;actividad_economica_clasificada (AEC):&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+ actividad_economica&lt;/div&gt;&lt;div&gt;+ tipo_concepto_renta&lt;/div&gt;&lt;div&gt;+ tipo_concepto_iva&lt;/div&gt;&lt;div&gt;+ probabilidad_vende_servicio&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="230" x="50" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-4" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontSize=10;" value="&lt;div&gt;&lt;b&gt;reglas_retencion_iva (RRI):&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+ actividad_economica&lt;/div&gt;&lt;div&gt;+ tipo_concepto_renta&lt;/div&gt;&lt;div&gt;+ categoria&lt;/div&gt;&lt;div&gt;+ probabilidad_vende_servicio&lt;/div&gt;&lt;div&gt;+ tipo_contribuyente&lt;/div&gt;&lt;div&gt;+ clase_contribuyente&lt;/div&gt;&lt;div&gt;+ tipo_excepcion&lt;/div&gt;&lt;div&gt;+ porcentaje_retencion_renta&lt;/div&gt;&lt;div&gt;+ contribuyente_especial&lt;br&gt;+ obligado_contabilidad&lt;/div&gt;" vertex="1">
+          <mxGeometry height="160" width="220" x="505" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-5" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontSize=10;" value="&lt;div&gt;&lt;b&gt;reglas_retencion_renta (RRR):&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;+ actividad_economica&lt;br&gt;+ tipo_concepto_iva&lt;br&gt;+ categoria&lt;br&gt;+ probabilidad_vende_servicio&lt;br&gt;+ tipo_contribuyente&lt;br&gt;+ clase_contribuyente&lt;br&gt;+ tipo_excepcion&lt;br&gt;+ porcentaje_retencion_iva&lt;/div&gt;&lt;div&gt;+ contribuyente_especial&lt;br&gt;+ obligado_contabilidad&lt;/div&gt;" vertex="1">
+          <mxGeometry height="160" width="210" x="165" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-9" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n1XSZUZqveBruTZGeArx-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-6" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontSize=10;" value="&lt;div&gt;&lt;b&gt;&amp;nbsp; base_rucs_sri (BRS):&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+ numero_ruc&lt;/div&gt;&lt;div&gt;+ numero_establecimiento_matriz&lt;/div&gt;&lt;div&gt;+ categoria&lt;/div&gt;&lt;div&gt;+ actividad_economica&lt;/div&gt;&lt;div&gt;+ clase_contribuyente&lt;/div&gt;&lt;div&gt;+ tipo_contribuyente&lt;/div&gt;&lt;div&gt;+ contribuyente_especial&lt;/div&gt;&lt;div&gt;+ obligado_contabilidad&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="140" width="230" x="50" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-11" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Combinar información de AEC y BRS" vertex="1">
+          <mxGeometry height="60" width="130" x="375" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-16" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n1XSZUZqveBruTZGeArx-13" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-12" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="base_enriquecida_retenciones" vertex="1">
+          <mxGeometry height="60" width="200" x="340" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-18" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n1XSZUZqveBruTZGeArx-17" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Combinar reglas_retencion_renta y reglas_retencion_iva para&amp;nbsp;&lt;b&gt;obtener porcentaje de retenciones&lt;/b&gt;" vertex="1">
+          <mxGeometry height="100" width="240" x="320" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-14" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.002;entryY=0.656;entryDx=0;entryDy=0;entryPerimeter=0;" target="n1XSZUZqveBruTZGeArx-13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="486" />
+              <mxPoint x="280" y="696" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-15" edge="1" parent="1" source="n1XSZUZqveBruTZGeArx-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.993;entryY=0.64;entryDx=0;entryDy=0;entryPerimeter=0;" target="n1XSZUZqveBruTZGeArx-13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="485" />
+              <mxPoint x="590" y="694" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n1XSZUZqveBruTZGeArx-17" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" value="" vertex="1">
+          <mxGeometry height="80" width="80" x="400" y="840" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
