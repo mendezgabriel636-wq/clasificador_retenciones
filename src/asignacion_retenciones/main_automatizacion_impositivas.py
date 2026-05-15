@@ -13,24 +13,24 @@ from .logger_config import LoggerManager
 logger = LoggerManager(__name__)
 
 
-def leer_base_rucs_sri() -> pl.DataFrame:
+def leer_base_rucs_sri(nombre_tabla: str) -> pl.DataFrame:
     try:
         base_rucs_sri = pl.read_database(
-            "SELECT * FROM base_rucs_sri WHERE matriz = 1",
+            f"SELECT * FROM {nombre_tabla} WHERE matriz = 1",
             connection=engine_data_fact_readonly,
         )
     except exc.SQLAlchemyError as e:
-        raise ValueError(f"[obtener_informacion.base_rucs_sri] {e}")
+        raise RuntimeError(f"[obtener_informacion.base_rucs_sri] {e}")
     return base_rucs_sri
 
 
-def leer_ciiu_clasificado() -> pl.DataFrame:
+def leer_ciiu_clasificado(nombre_tabla: str) -> pl.DataFrame:
     try:
         ciiu_clasificado = pl.read_database(
-            "SELECT * FROM ciiu_clasificado", connection=engine_data_fact_readonly
+            f"SELECT * FROM {nombre_tabla}", connection=engine_data_fact_readonly
         )
     except exc.SQLAlchemyError as e:
-        raise ValueError(f"[obtener_informacion.ciiu_clasificado] {e}")
+        raise RuntimeError(f"[obtener_informacion.ciiu_clasificado] {e}")
     return ciiu_clasificado
 
 
@@ -56,14 +56,15 @@ def carga_base_retenciones(df: pl.DataFrame):
                     )
         except Exception as e:
             logger.error(f"{e}")
+            raise
 
     logger.info("Carga al RDS terminada correctamente")
 
 
 def automatizar_impositivas():
     try:
-        base_rucs_sri = leer_base_rucs_sri()
-        ciiu_clasificado = leer_ciiu_clasificado()
+        base_rucs_sri = leer_base_rucs_sri("base_rucs_sri")
+        ciiu_clasificado = leer_ciiu_clasificado("ciiu_clasificado")
         df_retenciones = calcular_retenciones(
             base_rucs_sri=base_rucs_sri, ciiu_clasificado=ciiu_clasificado
         )
