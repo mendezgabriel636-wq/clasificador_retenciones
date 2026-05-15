@@ -5,16 +5,23 @@ from ..asignacion_retenciones.main_automatizacion_impositivas import (
     carga_base_retenciones,
     leer_base_rucs_sri,
     leer_ciiu_clasificado,
+    leer_reglas_retencion_iva,
+    leer_reglas_retencion_renta,
 )
 
 
 def test_leer_tablas():
-    leer_base_rucs_sri("base_rucs_sri")
     with pytest.raises(RuntimeError):
-        leer_base_rucs_sri("tabla_que_no_existe")
-    leer_ciiu_clasificado("ciiu_clasificado")
+        leer_base_rucs_sri()
+
     with pytest.raises(RuntimeError):
-        leer_ciiu_clasificado("tabla_que_no_existe")
+        leer_ciiu_clasificado()
+
+    with pytest.raises(RuntimeError):
+        leer_reglas_retencion_iva()
+
+    with pytest.raises(RuntimeError):
+        leer_reglas_retencion_renta()
 
 
 def test_carga_base_retenciones():

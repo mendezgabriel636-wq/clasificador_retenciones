@@ -13,10 +13,32 @@ from .logger_config import LoggerManager
 logger = LoggerManager(__name__)
 
 
-def leer_base_rucs_sri(nombre_tabla: str) -> pl.DataFrame:
+def leer_reglas_retencion_renta() -> pl.DataFrame:
     try:
         base_rucs_sri = pl.read_database(
-            f"SELECT * FROM {nombre_tabla} WHERE matriz = 1",
+            f"SELECT * FROM reglas_retencion_renta",
+            connection=engine_data_fact_readonly,
+        )
+    except exc.SQLAlchemyError as e:
+        raise RuntimeError(f"[obtener_informacion.reglas_retencion_renta] {e}")
+    return base_rucs_sri
+
+
+def leer_reglas_retencion_iva() -> pl.DataFrame:
+    try:
+        base_rucs_sri = pl.read_database(
+            f"SELECT * FROM reglas_retencion_iva",
+            connection=engine_data_fact_readonly,
+        )
+    except exc.SQLAlchemyError as e:
+        raise RuntimeError(f"[obtener_informacion.reglas_retencion_iva] {e}")
+    return base_rucs_sri
+
+
+def leer_base_rucs_sri() -> pl.DataFrame:
+    try:
+        base_rucs_sri = pl.read_database(
+            f"SELECT * FROM base_rucs_sri WHERE matriz = 1",
             connection=engine_data_fact_readonly,
         )
     except exc.SQLAlchemyError as e:
@@ -24,10 +46,10 @@ def leer_base_rucs_sri(nombre_tabla: str) -> pl.DataFrame:
     return base_rucs_sri
 
 
-def leer_ciiu_clasificado(nombre_tabla: str) -> pl.DataFrame:
+def leer_ciiu_clasificado() -> pl.DataFrame:
     try:
         ciiu_clasificado = pl.read_database(
-            f"SELECT * FROM {nombre_tabla}", connection=engine_data_fact_readonly
+            f"SELECT * FROM ciiu_clasificado", connection=engine_data_fact_readonly
         )
     except exc.SQLAlchemyError as e:
         raise RuntimeError(f"[obtener_informacion.ciiu_clasificado] {e}")
@@ -39,6 +61,11 @@ def carga_base_retenciones(df: pl.DataFrame):
     full_table_name = f"data_fact.base_retenciones"
 
     with engine_data_fact_escritura.begin() as conn:
+        conn.execute(
+            text(
+                f"CREATE TABLE {full_table_name}.backup AS SELECT * FROM {full_table_name}"
+            )
+        )
         conn.execute(text(f"DROP TABLE IF EXISTS {full_table_name}"))
         conn.execute(text(crear_tabla_sql))
         try:
@@ -63,10 +90,15 @@ def carga_base_retenciones(df: pl.DataFrame):
 
 def automatizar_impositivas():
     try:
-        base_rucs_sri = leer_base_rucs_sri("base_rucs_sri")
-        ciiu_clasificado = leer_ciiu_clasificado("ciiu_clasificado")
+        base_rucs_sri = leer_base_rucs_sri()
+        ciiu_clasificado = leer_ciiu_clasificado()
+        reglas_retenciones_renta = leer_reglas_retencion_renta()
+        reglas_retenciones_iva = leer_reglas_retencion_iva()
         df_retenciones = calcular_retenciones(
-            base_rucs_sri=base_rucs_sri, ciiu_clasificado=ciiu_clasificado
+            base_rucs_sri=base_rucs_sri,
+            ciiu_clasificado=ciiu_clasificado,
+            reglas_retenciones_iva=reglas_retenciones_iva,
+            reglas_retenciones_renta=reglas_retenciones_renta,
         )
         carga_base_retenciones(df_retenciones)
     except Exception as e:

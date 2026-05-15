@@ -1,5 +1,5 @@
 import polars as pl
-from polars import exceptions as exec
+from polars import exceptions as plexec
 
 
 def aplicar_retencion_iva(
@@ -16,9 +16,9 @@ def aplicar_retencion_iva(
             raise ValueError(
                 "[calcular_retenciones.retencion_iva] Falta valor de retenciones. Se busca la columna 'porcentaje_retencion_iva' en la tabla de regla_retenciones_iva."
             )
-    except exec.ColumnNotFoundError as e:
+    except plexec.ColumnNotFoundError as e:
         raise ValueError(f"[calcular_retenciones.retencion_iva] {e}")
-    except:
+    except Exception:
         raise
     return resultado
 
@@ -37,9 +37,9 @@ def aplicar_retencion_renta(
             raise ValueError(
                 "[calcular_retenciones.retencion_renta] Falta valor de retenciones. Se busca la columna 'porcentaje_retencion_renta' en la tabla de regla_retenciones_renta."
             )
-    except exec.ColumnNotFoundError as e:
+    except plexec.ColumnNotFoundError as e:
         raise ValueError(f"[calcular_retenciones.retencion_renta] {e}")
-    except:
+    except Exception:
         raise
     return resultado
 
