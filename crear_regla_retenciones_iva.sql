@@ -1,121 +1,128 @@
-CREATE TABLE conceptos_iva (
-  concepto VARCHAR(600),
-  PRIMARY KEY (concepto)
-);
--- Catálogo de conceptos IVA
-INSERT INTO conceptos_iva (concepto)
-VALUES
-  ('bienes gravados con iva'),
-  ('servicios y derechos, comisiones por intermediacion, contratos de consultoria'),
-  ('servicios profesionales personas naturales con titulo universitario'),
-  ('arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad'),
-  ('dietas, honorarios a miembros de directorios y cuerpos colegiados'),
-  ('servicios de construccion'),
-  ('servicios digitales importados'),
-  ('Importación de servicios'),
-  ('servicios realizados por instituciones del estado y empresas publicas'),
-  ('servicios y bienes de aviacion')
-
+-- =============================================================================
+-- Tabla de reglas de retención del IVA
+--
+-- Claves de join (deben existir en base_rucs_sri + ciiu_clasificado):
+--   tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria,
+--   obligado_llevar_contabilidad, contribuyente_especial
+--
+-- Columnas de salida (se añaden al resultado por el join):
+--   porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva
+-- =============================================================================
 
 CREATE TABLE reglas_retencion_iva (
-  tipo_concepto_iva VARCHAR(600) NOT NULL,
-  tipo_contribuyente VARCHAR(400) NOT NULL,
-  clase_contribuyente VARCHAR(300) NOT NULL,
-  categoria VARCHAR(200) NOT NULL,
-  obligado_contabilidad TINYINT(1) DEFAULT 0,
-  contribuyente_especial TINYINT(0) DEFAULT 0,
-  excepcion VARCHAR(100),
-  descripcion_excepcion,
-  porcentaje_retencion NOT NULL,
-  codigo_formulario NOT NULL,
+  -- claves de clasificación
+  tipo_concepto_iva              VARCHAR(200)  NOT NULL,
+  tipo_contribuyente             VARCHAR(50)   NOT NULL,
+  clase_contribuyente            VARCHAR(50)   NOT NULL,
+  categoria                      VARCHAR(100)  NOT NULL,
+  obligado_llevar_contabilidad   TINYINT(1)    NOT NULL DEFAULT 0,
+  contribuyente_especial         TINYINT(1)    NOT NULL DEFAULT 0,
+  -- columnas de salida
+  porcentaje_retencion_iva       DECIMAL(5,2)  NOT NULL,
+  campo_formulario_104_iva       INT,
+  codigo_anexo_iva               INT,
   PRIMARY KEY (
-    tipo_concepto_iva, 
-    tipo_contribuyente, 
-    clase_contribuyente, 
-    categoria, 
-    obligado_contabilidad, 
-    contribuyente_especial, 
-    excepcion
-  ),
-  FOREIGN KEY (descripcion_excepcion) 
-    REFERENCES tabla_excepciones_retenciones(descripcion_excepcion),
-  FOREIGN KEY (tipo_concepto_iva)
-    REFERENCES tipo_concepto_iva_formulario(tipo_concepto_iva)
+    tipo_concepto_iva,
+    tipo_contribuyente,
+    clase_contribuyente,
+    categoria,
+    obligado_llevar_contabilidad,
+    contribuyente_especial
+  )
 );
 
-INSERT INTO reglas_retencion_iva
-WITH
-conceptos AS (
-  SELECT tipo_concepto_iva FROM tipo_concepto_iva_formulario
-),
-contribuyentes AS (
-  SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria
-  FROM base_rucs_sri
-),
-flags AS (
-  SELECT *
-  FROM (VALUES (TRUE), (FALSE)) t1(contribuyente_especial)
-  CROSS JOIN (VALUES (TRUE), (FALSE)) t2(obligado_contabilidad)
-),
-combinaciones AS (
-  SELECT
-    c.tipo_concepto_iva,
-    t.tipo_contribuyente,
-    t.clase_contribuyente,
-    t.categoria,
-    f.obligado_contabilidad,
-    f.contribuyente_especial,
-    '' AS excepcion,
-    NULL AS descripcion_excepcion
-  FROM conceptos c
-  CROSS JOIN contribuyentes t
-  CROSS JOIN flags f
-)
-SELECT
-  *,
-  CASE
-    -- Sin IVA
-    WHEN categoria = 'NEGOCIO POPULAR'
-      THEN 0
-    -- Exentos de retención
-    WHEN tipo_concepto_iva IN (
-      'servicios realizados por instituciones del estado y empresas publicas',
-      'servicios y bienes de aviacion'
-    ) THEN 0
-    -- Siempre 100%
-    WHEN tipo_concepto_iva IN (
-      'servicios digitales importados',
-      'Importación de servicios',
-      'servicios profesionales personas naturales con titulo universitario',
-      'dietas, honorarios a miembros de directorios y cuerpos colegiados'
-    ) THEN 100
-    -- Arrendamiento: 100% solo si no obligado a contabilidad
-    WHEN tipo_concepto_iva = 'arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad'
-      AND obligado_contabilidad = FALSE
-      THEN 100
-    -- Construcción: siempre 30%
-    WHEN tipo_concepto_iva = 'servicios de construccion'
-      THEN 30
-    -- Bienes: depende de contribuyente especial
-    WHEN tipo_concepto_iva = 'bienes gravados con iva' AND contribuyente_especial = TRUE  THEN 10
-    WHEN tipo_concepto_iva = 'bienes gravados con iva' AND contribuyente_especial = FALSE THEN 30
-    -- Servicios: depende de contribuyente especial
-    WHEN tipo_concepto_iva = 'servicios y derechos, comisiones por intermediacion, contratos de consultoria' AND contribuyente_especial = TRUE  THEN 20
-    WHEN tipo_concepto_iva = 'servicios y derechos, comisiones por intermediacion, contratos de consultoria' AND contribuyente_especial = FALSE THEN 70
-    ELSE NULL
-  END AS porcentaje_retencion,
- 
-  CASE
-    WHEN categoria = 'NEGOCIO POPULAR'                                                                              THEN NULL
-    WHEN tipo_concepto_iva IN ('servicios realizados por instituciones del estado y empresas publicas','servicios y bienes de aviacion') THEN NULL
-    WHEN tipo_concepto_iva IN ('servicios digitales importados','Importación de servicios','servicios profesionales personas naturales con titulo universitario','dietas, honorarios a miembros de directorios y cuerpos colegiados') THEN '731'
-    WHEN tipo_concepto_iva = 'arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad' AND obligado_contabilidad = FALSE THEN '731'
-    WHEN tipo_concepto_iva = 'servicios de construccion'                                                            THEN '725'
-    WHEN tipo_concepto_iva = 'bienes gravados con iva'        AND contribuyente_especial = TRUE                     THEN '721'
-    WHEN tipo_concepto_iva = 'bienes gravados con iva'        AND contribuyente_especial = FALSE                    THEN '725'
-    WHEN tipo_concepto_iva = 'servicios y derechos, comisiones por intermediacion, contratos de consultoria' AND contribuyente_especial = TRUE  THEN '723'
-    WHEN tipo_concepto_iva = 'servicios y derechos, comisiones por intermediacion, contratos de consultoria' AND contribuyente_especial = FALSE THEN '729'
-    ELSE NULL
-  END AS codigo_formulario
- 
-FROM combinaciones;
+-- =============================================================================
+-- Datos: todas las combinaciones posibles
+-- Generadas cruzando conceptos × tipos de contribuyente × flags
+-- =============================================================================
+
+-- ---- NEGOCIO POPULAR: sin retención ----------------------------------------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT c.tipo_concepto_iva, t.tipo_contribuyente, t.clase_contribuyente, 'NEGOCIO POPULAR', f.obligado, f.especial, 0, NULL, NULL
+FROM (
+  SELECT 'bienes gravados con iva'                                                                                                               AS tipo_concepto_iva UNION ALL
+  SELECT 'servicios y derechos, comisiones por intermediacion, contratos de consultoria'                                                         UNION ALL
+  SELECT 'servicios profesionales personas naturales con titulo universitario'                                                                    UNION ALL
+  SELECT 'arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad'                            UNION ALL
+  SELECT 'dietas, honorarios a miembros de directorios y cuerpos colegiados'                                                                     UNION ALL
+  SELECT 'servicios de construccion'                                                                                                              UNION ALL
+  SELECT 'servicios digitales importados'                                                                                                         UNION ALL
+  SELECT 'Importación de servicios'                                                                                                               UNION ALL
+  SELECT 'servicios realizados por instituciones del estado y empresas publicas'                                                                  UNION ALL
+  SELECT 'servicios y bienes de aviacion'
+) c
+CROSS JOIN (
+  SELECT DISTINCT tipo_contribuyente, clase_contribuyente FROM base_rucs_sri WHERE categoria = 'NEGOCIO POPULAR'
+) t
+CROSS JOIN (SELECT 0 AS obligado, 0 AS especial UNION ALL SELECT 0,1 UNION ALL SELECT 1,0 UNION ALL SELECT 1,1) f;
+
+-- ---- Exentos: instituciones del estado y aviación → 0%, sin campo ----------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT c.tipo_concepto_iva, t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, f.especial, 0, NULL, NULL
+FROM (
+  SELECT 'servicios realizados por instituciones del estado y empresas publicas' AS tipo_concepto_iva
+  UNION ALL
+  SELECT 'servicios y bienes de aviacion'
+) c
+CROSS JOIN (
+  SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR'
+) t
+CROSS JOIN (SELECT 0 AS obligado, 0 AS especial UNION ALL SELECT 0,1 UNION ALL SELECT 1,0 UNION ALL SELECT 1,1) f;
+
+-- ---- Siempre 100%: digitales, importación, profesionales, dietas -----------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT c.tipo_concepto_iva, t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, f.especial, 100, 731, 7311
+FROM (
+  SELECT 'servicios digitales importados'                                                                        AS tipo_concepto_iva
+  UNION ALL SELECT 'Importación de servicios'
+  UNION ALL SELECT 'servicios profesionales personas naturales con titulo universitario'
+  UNION ALL SELECT 'dietas, honorarios a miembros de directorios y cuerpos colegiados'
+) c
+CROSS JOIN (
+  SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR'
+) t
+CROSS JOIN (SELECT 0 AS obligado, 0 AS especial UNION ALL SELECT 0,1 UNION ALL SELECT 1,0 UNION ALL SELECT 1,1) f;
+
+-- ---- Arrendamiento: 100% solo si NO obligado a contabilidad ----------------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad',
+       t.tipo_contribuyente, t.clase_contribuyente, t.categoria, 0, f.especial, 100, 731, 7312
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS especial UNION ALL SELECT 1) f;
+
+-- Arrendamiento: obligado a contabilidad → aplica regla de servicios (no retiene por este concepto)
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a llevar contabilidad',
+       t.tipo_contribuyente, t.clase_contribuyente, t.categoria, 1, f.especial, 70, 729, 7291
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS especial UNION ALL SELECT 1) f;
+
+-- ---- Construcción: siempre 30% --------------------------------------------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'servicios de construccion', t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, f.especial, 30, 725, 7251
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS obligado, 0 AS especial UNION ALL SELECT 0,1 UNION ALL SELECT 1,0 UNION ALL SELECT 1,1) f;
+
+-- ---- Bienes: contribuyente especial → 10%, otros → 30% --------------------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'bienes gravados con iva', t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, 1, 10, 721, 7211
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS obligado UNION ALL SELECT 1) f;
+
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'bienes gravados con iva', t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, 0, 30, 725, 7252
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS obligado UNION ALL SELECT 1) f;
+
+-- ---- Servicios: contribuyente especial → 20%, otros → 70% -----------------
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'servicios y derechos, comisiones por intermediacion, contratos de consultoria',
+       t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, 1, 20, 723, 7231
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS obligado UNION ALL SELECT 1) f;
+
+INSERT INTO reglas_retencion_iva (tipo_concepto_iva, tipo_contribuyente, clase_contribuyente, categoria, obligado_llevar_contabilidad, contribuyente_especial, porcentaje_retencion_iva, campo_formulario_104_iva, codigo_anexo_iva)
+SELECT 'servicios y derechos, comisiones por intermediacion, contratos de consultoria',
+       t.tipo_contribuyente, t.clase_contribuyente, t.categoria, f.obligado, 0, 70, 729, 7292
+FROM (SELECT DISTINCT tipo_contribuyente, clase_contribuyente, categoria FROM base_rucs_sri WHERE categoria <> 'NEGOCIO POPULAR') t
+CROSS JOIN (SELECT 0 AS obligado UNION ALL SELECT 1) f;

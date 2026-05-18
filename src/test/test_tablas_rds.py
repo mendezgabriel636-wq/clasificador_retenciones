@@ -1,160 +1,82 @@
 import pytest
-import polars as pl
-from datetime import date
-from ..asignacion_retenciones.main_automatizacion_impositivas import (
-    carga_base_retenciones,
+
+from asignacion_retenciones.main_automatizacion_impositivas import (
+    leer_actividades_economicas_faltantes,
+    leer_base_rucs_catastro,
     leer_base_rucs_sri,
     leer_ciiu_clasificado,
+    leer_ciiu_nivel6,
     leer_reglas_retencion_iva,
     leer_reglas_retencion_renta,
+    leer_rucs_bendo,
 )
 
 
-def test_leer_tablas():
-    with pytest.raises(RuntimeError):
-        leer_base_rucs_sri()
+# ---------------------------------------------------------------------------
+# Tablas del catálogo DuckDB
+# ---------------------------------------------------------------------------
 
-    with pytest.raises(RuntimeError):
-        leer_ciiu_clasificado()
-
-    with pytest.raises(RuntimeError):
-        leer_reglas_retencion_iva()
-
-    with pytest.raises(RuntimeError):
-        leer_reglas_retencion_renta()
-
-
-def test_carga_base_retenciones():
-    df = pl.DataFrame(
-        {
-            "numero_ruc": [1234567890001],
-            "numero_establecimiento_matriz": [1],
-            "razon_social": ["TEST SA"],
-            "estado_contribuyente": ["ACTIVO"],
-            "clase_contribuyente": ["OTROS"],
-            "obligado": [0],
-            "agente_retencion": [0],
-            "contribuyente_especial": [0],
-            "contribuyente_fantasma": [0],
-            "tipo_contribuyente": ["PERSONA NATURAL"],
-            "codigo_ciiu": ["G4711"],
-            "actividad_economica": ["COMERCIO AL POR MENOR"],
-            "categoria": ["CATEGORIA TEST"],
-            "nro_campo": [1],
-            "porcentaje_retencion_renta": [1.75],
-            "campo_formulario_103_ir": [310],
-            "codigo_anexo_ir": [3101],
-            "porcentaje_retencion_iva": [30.0],
-            "campo_formulario_104_iva": [601],
-            "codigo_anexo_iva": [6011],
-            "fecha_carga": [date.today()],
-            "fecha_inicio_actividades": [date(2010, 1, 1)],
-            "fecha_actualizacion": [None],
-            "fecha_suspension_definitiva": [None],
-            "fecha_reinicio_actividades": [None],
-        }
-    )
-    carga_base_retenciones(df)
+@pytest.mark.integration
+def test_leer_base_rucs_sri():
+    df = leer_base_rucs_sri(limit=10)
+    assert len(df) == 10
+    assert {"numero_ruc", "numero_establecimiento_matriz", "actividad_economica",
+            "tipo_contribuyente", "clase_contribuyente", "categoria",
+            "contribuyente_especial", "agente_retencion",
+            "obligado_llevar_contabilidad", "fecha_carga"}.issubset(set(df.columns))
 
 
-def test_carga_base_retenciones_fecha_tipo_incorrecto():
-    df = pl.DataFrame(
-        {
-            "numero_ruc": [1234567890001],
-            "numero_establecimiento_matriz": [1],
-            "razon_social": ["TEST SA"],
-            "estado_contribuyente": ["ACTIVO"],
-            "clase_contribuyente": ["OTROS"],
-            "obligado": [0],
-            "agente_retencion": [0],
-            "contribuyente_especial": [0],
-            "contribuyente_fantasma": [0],
-            "tipo_contribuyente": ["PERSONA NATURAL"],
-            "codigo_ciiu": ["G4711"],
-            "actividad_economica": ["COMERCIO AL POR MENOR"],
-            "categoria": ["CATEGORIA TEST"],
-            "nro_campo": [1],
-            "porcentaje_retencion_renta": [1.75],
-            "campo_formulario_103_ir": [310],
-            "codigo_anexo_ir": [3101],
-            "porcentaje_retencion_iva": [30.0],
-            "campo_formulario_104_iva": [601],
-            "codigo_anexo_iva": [6011],
-            "fecha_carga": ["no-soy-una-fecha"],
-            "fecha_inicio_actividades": ["tampoco-soy-fecha"],
-            "fecha_actualizacion": [None],
-            "fecha_suspension_definitiva": [None],
-            "fecha_reinicio_actividades": [None],
-        }
-    )
-    with pytest.raises(Exception):
-        carga_base_retenciones(df)
+@pytest.mark.integration
+def test_leer_actividades_economicas_clasificadas():
+    df = leer_ciiu_clasificado(limit=10)
+    assert len(df) == 10
+    assert {"actividad_economica", "codigo_ciiu",
+            "tipo_concepto_iva", "tipo_concepto_ir"}.issubset(set(df.columns))
 
 
-def test_carga_base_retenciones_falta_columna():
-    df = pl.DataFrame(
-        {
-            "numero_ruc": [1234567890001],
-            "numero_establecimiento_matriz": [1],
-            "razon_social": ["TEST SA"],
-            "estado_contribuyente": ["ACTIVO"],
-            "clase_contribuyente": ["OTROS"],
-            "obligado": [0],
-            "agente_retencion": [0],
-            "contribuyente_especial": [0],
-            "contribuyente_fantasma": [0],
-            "tipo_contribuyente": ["PERSONA NATURAL"],
-            "codigo_ciiu": ["G4711"],
-            "actividad_economica": ["COMERCIO AL POR MENOR"],
-            "categoria": ["CATEGORIA TEST"],
-            "nro_campo": [1],
-            "porcentaje_retencion_renta": [1.75],
-            "campo_formulario_103_ir": [310],
-            "codigo_anexo_ir": [3101],
-            "porcentaje_retencion_iva": [30.0],
-            "campo_formulario_104_iva": [601],
-            "codigo_anexo_iva": [6011],
-            # fecha_carga ausente intencionalmente
-            "fecha_inicio_actividades": [date(2010, 1, 1)],
-            "fecha_actualizacion": [None],
-            "fecha_suspension_definitiva": [None],
-            "fecha_reinicio_actividades": [None],
-        }
-    )
-    with pytest.raises(Exception):
-        carga_base_retenciones(df)
+@pytest.mark.integration
+def test_leer_base_rucs_catastro():
+    df = leer_base_rucs_catastro(limit=10)
+    assert len(df) == 10
+    assert "numero_ruc" in df.columns
 
 
-def test_carga_base_retenciones_columna_extra():
-    df = pl.DataFrame(
-        {
-            "numero_ruc": [1234567890001],
-            "numero_establecimiento_matriz": [1],
-            "razon_social": ["TEST SA"],
-            "estado_contribuyente": ["ACTIVO"],
-            "clase_contribuyente": ["OTROS"],
-            "obligado": [0],
-            "agente_retencion": [0],
-            "contribuyente_especial": [0],
-            "contribuyente_fantasma": [0],
-            "tipo_contribuyente": ["PERSONA NATURAL"],
-            "codigo_ciiu": ["G4711"],
-            "actividad_economica": ["COMERCIO AL POR MENOR"],
-            "categoria": ["CATEGORIA TEST"],
-            "nro_campo": [1],
-            "porcentaje_retencion_renta": [1.75],
-            "campo_formulario_103_ir": [310],
-            "codigo_anexo_ir": [3101],
-            "porcentaje_retencion_iva": [30.0],
-            "campo_formulario_104_iva": [601],
-            "codigo_anexo_iva": [6011],
-            "fecha_carga": [date.today()],
-            "fecha_inicio_actividades": [date(2010, 1, 1)],
-            "fecha_actualizacion": [None],
-            "fecha_suspension_definitiva": [None],
-            "fecha_reinicio_actividades": [None],
-            "columna_extra": ["no_deberia_estar"],
-        }
-    )
-    with pytest.raises(Exception):
-        carga_base_retenciones(df)
+@pytest.mark.integration
+def test_leer_ciiu_nivel6():
+    df = leer_ciiu_nivel6(limit=10)
+    assert len(df) == 10
+    assert {"codigo", "descripcion"}.issubset(set(df.columns))
+
+
+@pytest.mark.integration
+def test_leer_actividades_economicas_faltantes():
+    df = leer_actividades_economicas_faltantes(limit=10)
+    assert len(df) == 10
+    assert {"actividad_economica", "codigo_ciiu"}.issubset(set(df.columns))
+
+
+@pytest.mark.integration
+def test_leer_rucs_bendo():
+    df = leer_rucs_bendo(limit=10)
+    assert len(df) == 10
+    assert "numero_ruc" in df.columns
+
+
+# ---------------------------------------------------------------------------
+# Tablas de reglas
+# ---------------------------------------------------------------------------
+
+@pytest.mark.integration
+def test_leer_reglas_retencion_iva():
+    df = leer_reglas_retencion_iva(limit=10)
+    assert len(df) == 10
+    assert {"tipo_concepto_iva", "porcentaje_retencion_iva",
+            "campo_formulario_104_iva"}.issubset(set(df.columns))
+
+
+@pytest.mark.integration
+def test_leer_reglas_retencion_renta():
+    df = leer_reglas_retencion_renta(limit=10)
+    assert len(df) == 10
+    assert {"tipo_concepto_ir", "porcentaje_retencion_renta",
+            "campo_formulario_103_ir"}.issubset(set(df.columns))

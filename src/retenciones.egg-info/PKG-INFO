@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: retenciones
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: anthropic>=0.102.0
+Requires-Dist: cryptography>=48.0.0
+Requires-Dist: dotenv>=0.9.9
+Requires-Dist: duckdb>=1.5.2
+Requires-Dist: pandas>=3.0.3
+Requires-Dist: polars>=1.40.1
+Requires-Dist: pyarrow>=24.0.0
+Requires-Dist: pymysql>=1.1.3
+Requires-Dist: pytest>=9.0.3
+Requires-Dist: pytest-html>=4.0
+Requires-Dist: pytz>=2026.2
+Requires-Dist: rapidfuzz>=3.14.5
+Requires-Dist: spacy>=3.8.14
+Requires-Dist: sqlalchemy>=2.0.49
+
+# LINKS sobre información oficial
+[INFORMACIÓN OFICIAL](https://www.sri.gob.ec/en/formularios-e-instructivos)
+
+## LINKS formularios_oficiales
+Se ha creado las tablas correspondientes para asignar las retenciones basados en estos links oficiales:
+[FORMULARIO RETENCIONES DE FUENTE RENTA](https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/d44965a9-2b00-4f3c-b124-5c4d81722384/FORMULARIO%20RETENCIONES%20EN%20LA%20FUENTE.xls)
+[FORMULARIO RETENCIONES DE FUENTE IVA](https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/4f1ee4d0-5637-4d76-be42-fa8851aa400c/FORMULARIO%20IVA.xlsx)

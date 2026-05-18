@@ -1,207 +1,246 @@
-CREATE TABLE conceptos_renta (
-  concepto VARCHAR(100),
-  PRIMARY KEY (concepto)
-);
+-- =============================================================================
+-- Tabla de reglas de retención IR (Impuesto a la Renta)
+--
+-- Claves de join:
+--   clase_contribuyente, categoria, contribuyente_especial,
+--   tipo_contribuyente, tipo_concepto_ir
+--
+-- Columnas de salida:
+--   nro_campo, porcentaje_retencion_renta, campo_formulario_103_ir, codigo_anexo_ir
+--
+-- REQUIERE que base_rucs_sri y ciiu_clasificado ya estén cargadas en MySQL.
+-- =============================================================================
 
-INSERT INTO conceptos_renta (concepto) VALUES
-  ('bien agropecuario'),
-  ('servicio mano obra'),
-  ('minerales'),
-  ('bien mueble'),
-  ('energia'),
-  ('residual'),
-  ('construccion'),
-  ('transporte'),
-  ('medios comunicacion'),
-  ('servicio intelecto'),
-  ('financiero banco'),
-  ('financiero otros'),
-  ('seguros'),
-  ('arrendamiento inmueble'),
-  ('comisiones'),
-  ('servicio profesional'),
-  ('arrendamiento mercantil'),
-  ('sector publico'),
-  ('educacion'),
-  ('imagen renombre'),
-  ('loterias'),
-  ('domestico'),
-  ('extraterritorial');
+DROP TABLE IF EXISTS reglas_retencion_renta;
 
--- -----------------------------------------------------------------------------
--- TABLA PRINCIPAL: reglas_retencion_renta
--- Cada fila = un caso posible del motor Python calcular_retencion_renta()
--- -----------------------------------------------------------------------------
 CREATE TABLE reglas_retencion_renta (
-  contribuyente_especial    TINYINT(1)    NOT NULL DEFAULT 0,
-  clase_contribuyente       VARCHAR(100)  NOT NULL,
-  categoria                 VARCHAR(100)  NOT NULL,
-  tipo_contribuyente        VARCHAR(100)  NOT NULL,
-  tipo_concepto_ir          VARCHAR(100)  NOT NULL,
-  regla                     VARCHAR(10)   NOT NULL,
-  codigo_sri                VARCHAR(10)   NOT NULL,
-  porcentaje_retencion      DECIMAL(5,2)  NOT NULL,
-  descripcion               VARCHAR(300)  NOT NULL,
-  base_calculo              VARCHAR(300)  NOT NULL,
+  clase_contribuyente        VARCHAR(100)  NOT NULL,
+  categoria                  VARCHAR(100)  NOT NULL,
+  contribuyente_especial     TINYINT(1)    NOT NULL DEFAULT 0,
+  tipo_contribuyente         VARCHAR(100)  NOT NULL,
+  tipo_concepto_ir           VARCHAR(100)  NOT NULL,
+  nro_campo                  INT           NOT NULL,
+  porcentaje_retencion_renta DECIMAL(5,2)  NOT NULL,
+  campo_formulario_103_ir    INT           NOT NULL,
+  codigo_anexo_ir            INT           NOT NULL,
   PRIMARY KEY (
-    contribuyente_especial,
     clase_contribuyente,
     categoria,
+    contribuyente_especial,
     tipo_contribuyente,
     tipo_concepto_ir
-  ),
-  FOREIGN KEY (tipo_concepto_ir)
-    REFERENCES tipo_concepto_ir_catalogo(tipo_concepto_ir)
+  )
 );
 
--- =============================================================================
--- REGLA 1: Contribuyente Especial → 332, 0%, NO RETENER
--- =============================================================================
--- R1A: campo contribuyente_especial = SI/1/TRUE
-INSERT INTO reglas_retencion_renta VALUES
-  (1, '(cualquiera)', '(cualquiera)', 'PERSONA NATURAL', '(cualquiera)', 'R1', '332', 0.00, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI'),
-  (1, '(cualquiera)', '(cualquiera)', 'SOCIEDAD',        '(cualquiera)', 'R1', '332', 0.00, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI');
-
--- R1B: clase_contribuyente = ESPECIAL
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'ESPECIAL', '(cualquiera)', 'PERSONA NATURAL', '(cualquiera)', 'R1', '332', 0.00, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI'),
-  (0, 'ESPECIAL', '(cualquiera)', 'SOCIEDAD',        '(cualquiera)', 'R1', '332', 0.00, 'NO RETENER - Contribuyente Especial', 'Art.92 LORTI');
+-- Tabla auxiliar con los 23 tipos de concepto IR
+CREATE TEMPORARY TABLE tmp_tipos_ir (tipo_concepto_ir VARCHAR(100));
+INSERT INTO tmp_tipos_ir VALUES
+  ('BIEN_MUEBLE'),('BIEN_AGROPECUARIO'),('MINERALES'),('ENERGIA'),
+  ('SERVICIO_MANO_OBRA'),('SERVICIO_PROFESIONAL'),('SERVICIO_INTELECTO'),
+  ('CONSTRUCCION'),('TRANSPORTE'),('MEDIOS_COMUNICACION'),('COMISIONES'),
+  ('EDUCACION'),('DOMESTICO'),('IMAGEN_RENOMBRE'),('FINANCIERO_BANCO'),
+  ('FINANCIERO_OTROS'),('SEGUROS'),('ARRENDAMIENTO_INMUEBLE'),
+  ('ARRENDAMIENTO_MERCANTIL'),('SECTOR_PUBLICO'),('LOTERIAS'),
+  ('EXTRATERRITORIAL'),('RESIDUAL');
 
 -- =============================================================================
--- REGLA 2: RIMPE Negocio Popular → 332, 0%
+-- REGLA 1: contribuyente_especial = 1  →  0% · campo 332 · cód 3321
+-- Aplica a TODAS las combinaciones de clase/categoria/tipo_contribuyente
+-- y a TODOS los tipos de concepto IR.
 -- =============================================================================
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'RIMPE', 'NEGOCIO POPULAR', 'PERSONA NATURAL', '(cualquiera)', 'R2', '332', 0.00, 'No sujeto a retención / RIMPE Negocio Popular', 'RIMPE Negocio Popular'),
-  (0, 'RIMPE', 'NEGOCIO POPULAR', 'SOCIEDAD',        '(cualquiera)', 'R2', '332', 0.00, 'No sujeto a retención / RIMPE Negocio Popular', 'RIMPE Negocio Popular');
-
--- =============================================================================
--- REGLA 3: RIMPE Emprendedor → 343, 1%
--- =============================================================================
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'RIMPE', 'EMPRENDEDOR', 'PERSONA NATURAL', '(cualquiera)', 'R3', '343', 1.00, 'RIMPE Emprendedor', 'RIMPE Emprendedor'),
-  (0, 'RIMPE', 'EMPRENDEDOR', 'SOCIEDAD',        '(cualquiera)', 'R3', '343', 1.00, 'RIMPE Emprendedor', 'RIMPE Emprendedor');
-
--- =============================================================================
--- REGLA 4: Régimen General — Conceptos DIFERENCIADOS PN vs SOC
--- (del MAPEO_DIFERENCIADO: código distinto según tipo_contribuyente)
--- =============================================================================
-
--- SERVICIO_PROFESIONAL: PN → 303 (10%) / SOC → 303A (5%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'SERVICIO_PROFESIONAL', 'R4', '303',  10.00, 'Honorarios profesionales - personas naturales',  'SERVICIO_PROFESIONAL → 303'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'SERVICIO_PROFESIONAL', 'R4', '303A',  5.00, 'Servicios profesionales - SOCIEDADES',           'SERVICIO_PROFESIONAL → 303A');
-
--- SERVICIO_INTELECTO: PN → 304 (10%) / SOC → 303A (5%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'SERVICIO_INTELECTO', 'R4', '304',  10.00, 'Servicios prevalece intelecto - personas naturales', 'SERVICIO_INTELECTO → 304'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'SERVICIO_INTELECTO', 'R4', '303A',  5.00, 'Servicios profesionales - SOCIEDADES',               'SERVICIO_INTELECTO → 303A');
-
--- COMISIONES: PN → 304A (10%) / SOC → 3482 (5%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'COMISIONES', 'R4', '304A', 10.00, 'Comisiones a personas naturales',  'COMISIONES → 304A'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'COMISIONES', 'R4', '3482',  5.00, 'Comisiones a sociedades',          'COMISIONES → 3482');
-
--- EDUCACION: PN → 304E (10%) / SOC → 303A (5%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'EDUCACION', 'R4', '304E', 10.00, 'Docencia',                             'EDUCACION → 304E'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'EDUCACION', 'R4', '303A',  5.00, 'Servicios profesionales - SOCIEDADES', 'EDUCACION → 303A');
-
--- ARRENDAMIENTO_MERCANTIL: PN → 3440 (3%) / SOC → 319 (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'ARRENDAMIENTO_MERCANTIL', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)',                          'ARRENDAMIENTO_MERCANTIL → 3440'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'ARRENDAMIENTO_MERCANTIL', 'R4', '319',  2.00, 'Arrendamiento mercantil (leasing) - sociedades',          'ARRENDAMIENTO_MERCANTIL → 319');
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT
+    b.clase_contribuyente,
+    b.categoria,
+    1                    AS contribuyente_especial,
+    b.tipo_contribuyente,
+    c.tipo_concepto_ir,
+    1                    AS nro_campo,
+    0.00                 AS porcentaje_retencion_renta,
+    332                  AS campo_formulario_103_ir,
+    3321                 AS codigo_anexo_ir
+FROM (SELECT DISTINCT clase_contribuyente, categoria, tipo_contribuyente FROM base_rucs_sri) b
+CROSS JOIN tmp_tipos_ir c;
 
 -- =============================================================================
--- REGLA 4: Régimen General — Conceptos SIMPLES (mismo código PN y SOC)
--- (del MAPEO: código único independiente del tipo_contribuyente)
+-- REGLA 2: RIMPE Negocio Popular  →  0% · campo 332 · cód 3321
+-- =============================================================================
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT
+    'RIMPE', 'NEGOCIO POPULAR', 0,
+    t.tipo_contribuyente,
+    c.tipo_concepto_ir,
+    5, 0.00, 332, 3321
+FROM (SELECT DISTINCT tipo_contribuyente FROM base_rucs_sri) t
+CROSS JOIN tmp_tipos_ir c;
+
+-- =============================================================================
+-- REGLA 3: RIMPE Emprendedor  →  1% · campo 343 · cód 3431
+-- =============================================================================
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT
+    'RIMPE', 'EMPRENDEDOR', 0,
+    t.tipo_contribuyente,
+    c.tipo_concepto_ir,
+    7, 1.00, 343, 3431
+FROM (SELECT DISTINCT tipo_contribuyente FROM base_rucs_sri) t
+CROSS JOIN tmp_tipos_ir c;
+
+-- =============================================================================
+-- REGLA 4: Régimen General — lookup por tipo_concepto_ir y tipo_contribuyente
+-- Aplica a todas las clases que NO son RIMPE y con contribuyente_especial = 0.
 -- =============================================================================
 
--- BIEN_AGROPECUARIO → 312C (1.75%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'BIEN_AGROPECUARIO', 'R4', '312C', 1.75, 'Compras al COMERCIALIZADOR agropecuario', 'BIEN_AGROPECUARIO → 312C'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'BIEN_AGROPECUARIO', 'R4', '312C', 1.75, 'Compras al COMERCIALIZADOR agropecuario', 'BIEN_AGROPECUARIO → 312C');
+-- Helper: combinaciones reales de clase/categoria que no son RIMPE ni especial
+CREATE TEMPORARY TABLE tmp_clases_general AS
+SELECT DISTINCT clase_contribuyente, categoria, tipo_contribuyente
+FROM base_rucs_sri
+WHERE clase_contribuyente NOT IN ('RIMPE')
+  AND clase_contribuyente NOT LIKE '%ESPECIAL%';
 
--- SERVICIO_MANO_OBRA → 307 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'SERVICIO_MANO_OBRA', 'R4', '307', 3.00, 'Servicios predomina mano de obra', 'SERVICIO_MANO_OBRA → 307'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'SERVICIO_MANO_OBRA', 'R4', '307', 3.00, 'Servicios predomina mano de obra', 'SERVICIO_MANO_OBRA → 307');
+-- SERVICIO_PROFESIONAL: PN 10%/303, SOC 5%/303
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'SERVICIO_PROFESIONAL',
+  9,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 10.00 ELSE 5.00 END,
+  303, 3031
+FROM tmp_clases_general g;
 
--- MINERALES → 344B (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'MINERALES', 'R4', '344B', 2.00, 'Sustancias minerales', 'MINERALES → 344B'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'MINERALES', 'R4', '344B', 2.00, 'Sustancias minerales', 'MINERALES → 344B');
+-- SERVICIO_INTELECTO: PN 10%/304, SOC 5%/303
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'SERVICIO_INTELECTO',
+  11,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 10.00 ELSE 5.00 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 304 ELSE 303 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 3041 ELSE 3031 END
+FROM tmp_clases_general g;
 
--- BIEN_MUEBLE → 312 (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'BIEN_MUEBLE', 'R4', '312', 2.00, 'Transferencia de bienes muebles corporales', 'BIEN_MUEBLE → 312'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'BIEN_MUEBLE', 'R4', '312', 2.00, 'Transferencia de bienes muebles corporales', 'BIEN_MUEBLE → 312');
+-- COMISIONES: PN 10%/304, SOC 5%/3482
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'COMISIONES',
+  13,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 10.00 ELSE 5.00 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 304 ELSE 3482 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 3042 ELSE 34821 END
+FROM tmp_clases_general g;
 
--- ENERGIA → 343A (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'ENERGIA', 'R4', '343A', 2.00, 'Energía eléctrica', 'ENERGIA → 343A'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'ENERGIA', 'R4', '343A', 2.00, 'Energía eléctrica', 'ENERGIA → 343A');
+-- EDUCACION: PN 10%/304, SOC 5%/303
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'EDUCACION',
+  15,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 10.00 ELSE 5.00 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 304 ELSE 303 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 3043 ELSE 3034 END
+FROM tmp_clases_general g;
 
--- RESIDUAL → 3440 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'RESIDUAL', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'RESIDUAL → 3440'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'RESIDUAL', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'RESIDUAL → 3440');
+-- ARRENDAMIENTO_MERCANTIL: PN 3%/3440, SOC 2%/319
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'ARRENDAMIENTO_MERCANTIL',
+  17,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 3.00 ELSE 2.00 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 3440 ELSE 319 END,
+  CASE g.tipo_contribuyente WHEN 'PERSONA NATURAL' THEN 34401 ELSE 3191 END
+FROM tmp_clases_general g;
 
--- CONSTRUCCION → 343B (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'CONSTRUCCION', 'R4', '343B', 2.00, 'Construcción obra material inmueble', 'CONSTRUCCION → 343B'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'CONSTRUCCION', 'R4', '343B', 2.00, 'Construcción obra material inmueble', 'CONSTRUCCION → 343B');
+-- Conceptos simples (mismo % para PN y SOC) ----------
 
--- TRANSPORTE → 310 (1%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'TRANSPORTE', 'R4', '310', 1.00, 'Transporte privado pasajeros / público y privado carga', 'TRANSPORTE → 310'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'TRANSPORTE', 'R4', '310', 1.00, 'Transporte privado pasajeros / público y privado carga', 'TRANSPORTE → 310');
+-- BIEN_AGROPECUARIO: 1.75% / 312
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'BIEN_AGROPECUARIO', 19, 1.75, 312, 3121 FROM tmp_clases_general g;
 
--- MEDIOS_COMUNICACION → 309 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'MEDIOS_COMUNICACION', 'R4', '309', 3.00, 'Medios comunicación y publicidad', 'MEDIOS_COMUNICACION → 309'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'MEDIOS_COMUNICACION', 'R4', '309', 3.00, 'Medios comunicación y publicidad', 'MEDIOS_COMUNICACION → 309');
+-- SERVICIO_MANO_OBRA: 3% / 307
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'SERVICIO_MANO_OBRA', 21, 3.00, 307, 3071 FROM tmp_clases_general g;
 
--- FINANCIERO_BANCO → 323O (0%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'FINANCIERO_BANCO', 'R4', '323O', 0.00, 'Intereses a bancos y entidades financieras', 'FINANCIERO_BANCO → 323O'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'FINANCIERO_BANCO', 'R4', '323O', 0.00, 'Intereses a bancos y entidades financieras', 'FINANCIERO_BANCO → 323O');
+-- MINERALES: 2% / 344
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'MINERALES', 23, 2.00, 344, 3441 FROM tmp_clases_general g;
 
--- FINANCIERO_OTROS → 3440 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'FINANCIERO_OTROS', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'FINANCIERO_OTROS → 3440'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'FINANCIERO_OTROS', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'FINANCIERO_OTROS → 3440');
+-- BIEN_MUEBLE: 2% / 312
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'BIEN_MUEBLE', 25, 2.00, 312, 3122 FROM tmp_clases_general g;
 
--- SEGUROS → 322 (2%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'SEGUROS', 'R4', '322', 2.00, 'Seguros y reaseguros (primas)', 'SEGUROS → 322'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'SEGUROS', 'R4', '322', 2.00, 'Seguros y reaseguros (primas)', 'SEGUROS → 322');
+-- ENERGIA: 2% / 343
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'ENERGIA', 27, 2.00, 343, 3432 FROM tmp_clases_general g;
 
--- ARRENDAMIENTO_INMUEBLE → 320 (10%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'ARRENDAMIENTO_INMUEBLE', 'R4', '320', 10.00, 'Arrendamiento bienes inmuebles', 'ARRENDAMIENTO_INMUEBLE → 320'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'ARRENDAMIENTO_INMUEBLE', 'R4', '320', 10.00, 'Arrendamiento bienes inmuebles', 'ARRENDAMIENTO_INMUEBLE → 320');
+-- RESIDUAL: 3% / 3440
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'RESIDUAL', 29, 3.00, 3440, 34402 FROM tmp_clases_general g;
 
--- SECTOR_PUBLICO → 3440 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'SECTOR_PUBLICO', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'SECTOR_PUBLICO → 3440'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'SECTOR_PUBLICO', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'SECTOR_PUBLICO → 3440');
+-- CONSTRUCCION: 2% / 343
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'CONSTRUCCION', 31, 2.00, 343, 3433 FROM tmp_clases_general g;
 
--- IMAGEN_RENOMBRE → 308 (10%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'IMAGEN_RENOMBRE', 'R4', '308', 10.00, 'Uso imagen/renombre (influencers)', 'IMAGEN_RENOMBRE → 308'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'IMAGEN_RENOMBRE', 'R4', '308', 10.00, 'Uso imagen/renombre (influencers)', 'IMAGEN_RENOMBRE → 308');
+-- TRANSPORTE: 1% / 310
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'TRANSPORTE', 33, 1.00, 310, 3101 FROM tmp_clases_general g;
 
--- LOTERIAS → 335 (15%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'LOTERIAS', 'R4', '335', 15.00, 'Loterías, rifas, apuestas', 'LOTERIAS → 335'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'LOTERIAS', 'R4', '335', 15.00, 'Loterías, rifas, apuestas', 'LOTERIAS → 335');
+-- MEDIOS_COMUNICACION: 3% / 309
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'MEDIOS_COMUNICACION', 35, 3.00, 309, 3091 FROM tmp_clases_general g;
 
--- DOMESTICO → 3440 (3%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'DOMESTICO', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'DOMESTICO → 3440'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'DOMESTICO', 'R4', '3440', 3.00, 'Otras retenciones 3% (residual)', 'DOMESTICO → 3440');
+-- FINANCIERO_BANCO: 0% / 323
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'FINANCIERO_BANCO', 37, 0.00, 323, 3231 FROM tmp_clases_general g;
 
--- EXTRATERRITORIAL → 332 (0%)
-INSERT INTO reglas_retencion_renta VALUES
-  (0, 'OTROS', 'REGIMEN GENERAL', 'PERSONA NATURAL', 'EXTRATERRITORIAL', 'R4', '332', 0.00, 'No sujeto a retención / RIMPE Negocio Popular', 'EXTRATERRITORIAL → 332'),
-  (0, 'OTROS', 'REGIMEN GENERAL', 'SOCIEDAD',        'EXTRATERRITORIAL', 'R4', '332', 0.00, 'No sujeto a retención / RIMPE Negocio Popular', 'EXTRATERRITORIAL → 332');
+-- FINANCIERO_OTROS: 3% / 3440
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'FINANCIERO_OTROS', 39, 3.00, 3440, 34403 FROM tmp_clases_general g;
+
+-- SEGUROS: 2% / 322
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'SEGUROS', 41, 2.00, 322, 3221 FROM tmp_clases_general g;
+
+-- ARRENDAMIENTO_INMUEBLE: 10% / 320
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'ARRENDAMIENTO_INMUEBLE', 43, 10.00, 320, 3201 FROM tmp_clases_general g;
+
+-- SECTOR_PUBLICO: 3% / 3440
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'SECTOR_PUBLICO', 45, 3.00, 3440, 34404 FROM tmp_clases_general g;
+
+-- IMAGEN_RENOMBRE: 10% / 308
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'IMAGEN_RENOMBRE', 47, 10.00, 308, 3081 FROM tmp_clases_general g;
+
+-- LOTERIAS: 15% / 335
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'LOTERIAS', 49, 15.00, 335, 3351 FROM tmp_clases_general g;
+
+-- DOMESTICO: 3% / 3440
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'DOMESTICO', 51, 3.00, 3440, 34405 FROM tmp_clases_general g;
+
+-- EXTRATERRITORIAL: 0% / 332
+INSERT IGNORE INTO reglas_retencion_renta
+SELECT g.clase_contribuyente, g.categoria, 0, g.tipo_contribuyente,
+  'EXTRATERRITORIAL', 53, 0.00, 332, 3322 FROM tmp_clases_general g;
+
+DROP TEMPORARY TABLE tmp_tipos_ir;
+DROP TEMPORARY TABLE tmp_clases_general;
+
+SELECT CONCAT('reglas_retencion_renta: ', COUNT(*), ' filas') AS resultado
+FROM reglas_retencion_renta;

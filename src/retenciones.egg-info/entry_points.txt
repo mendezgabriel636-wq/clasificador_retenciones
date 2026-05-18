@@ -1,0 +1,2 @@
+[console_scripts]
+retenciones = asignacion_retenciones.main_automatizacion_impositivas:automatizar_impositivas

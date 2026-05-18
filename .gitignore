@@ -4,3 +4,5 @@ src/retenciones.egg_info/
 catalogo_retenciones.duckdb
 data_backups/
 .venv/
+.env/
+logs/
